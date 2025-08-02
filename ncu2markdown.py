@@ -289,6 +289,13 @@ def display_ncu_data_in_notebook(ncu_csv):
 
     ncu_data = add_per_section_markdown(parse_ncu_csv_data(ncu_csv))
 
+    # Disable nested scrolling in Google Colab because it scrolls past the tabs and selector.
+    try:
+        from google.colab import output
+        output.no_vertical_scroll()
+    except ImportError:
+        pass
+
     # Ensure text in the widget respects dark/light mode.
     display(HTML("""
     <style>
