@@ -146,7 +146,7 @@ ncu2markdown.display_ncu_data_in_notebook(copy_blocked_csv)
 | Memory Throughput | Gbyte/second | 256.7 |
 | Memory Utilization | % | 18.2 |
 
-ℹ️ **INFO**: Memory bandwidth utilization is low. Consider increasing arithmetic intensity...
+⚠️ **WARNING**: Memory bandwidth utilization is low. Consider increasing arithmetic intensity...
 ```
 
 ## Requirements

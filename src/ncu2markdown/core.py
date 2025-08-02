@@ -256,8 +256,8 @@ def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
         markdown_lines.append(f"# {kernel_name}\n")
 
         if not sections:
-            markdown_lines.append(f"No sections found for kernel: {selected_kernel}")
-            return
+            markdown_lines.append(f"No sections found for kernel: {kernel_name}")
+            continue
 
         # Add each section's markdown in sorted order
         for section_name, section_data in get_sorted_sections(sections):
