@@ -63,59 +63,59 @@ def expected_parsed_data() -> Dict[str, Any]:
     """Expected parsed data structure for sample CSV."""
     return {
         'simple_kernel': {
-            'Speed Of Light': {
-                'metrics': [
-                    {'name': 'DRAM Frequency', 'unit': 'hz', 'value': '1,215,000,000.00'},
-                    {'name': 'SM Frequency', 'unit': 'hz', 'value': '1,410,000,000.50'},
-                    {'name': 'Memory Throughput', 'unit': '%', 'value': '45.7'}
-                ],
-                'rules': [
-                    {
-                        'name': 'SOLBottleneck',
-                        'type': 'OPT',
-                        'description': 'Memory is more heavily utilized than Compute: Look at the Memory Workload Analysis section.',
-                        'speedup_type': '',
-                        'speedup': ''
-                    },
-                    {
-                        'name': 'SOLFPRoofline',
-                        'type': 'INF',
-                        'description': 'The kernel achieved 0% of this device\'s fp32 peak performance.',
-                        'speedup_type': '',
-                        'speedup': ''
-                    }
-                ]
+                    'Speed Of Light': {
+            'Metrics': {
+                'DRAM Frequency': {'Name': 'DRAM Frequency', 'Unit': 'hz', 'Value': '1,215,000,000.00'},
+                'SM Frequency': {'Name': 'SM Frequency', 'Unit': 'hz', 'Value': '1,410,000,000.50'},
+                'Memory Throughput': {'Name': 'Memory Throughput', 'Unit': '%', 'Value': '45.7'}
             },
-            'Memory Workload': {
-                'metrics': [
-                    {'name': 'Global Load Efficiency', 'unit': '%', 'value': '90.5'},
-                    {'name': 'Global Store Efficiency', 'unit': '%', 'value': '85.2'}
-                ],
-                'rules': [
-                    {
-                        'name': 'MemoryBound',
-                        'type': 'WRN',
-                        'description': 'Memory bandwidth utilization is high. Consider optimizing memory access patterns.',
-                        'speedup_type': 'estimated',
-                        'speedup': '15.5'
-                    }
-                ]
+            'Rules': [
+                {
+                    'Name': 'SOLBottleneck',
+                    'Type': 'OPT',
+                    'Description': 'Memory is more heavily utilized than Compute: Look at the Memory Workload Analysis section.',
+                    'Speedup_type': '',
+                    'Speedup': ''
+                },
+                {
+                    'Name': 'SOLFPRoofline',
+                    'Type': 'INF',
+                    'Description': 'The kernel achieved 0% of this device\'s fp32 peak performance.',
+                    'Speedup_type': '',
+                    'Speedup': ''
+                }
+            ]
+            },
+                    'Memory Workload': {
+            'Metrics': {
+                'Global Load Efficiency': {'Name': 'Global Load Efficiency', 'Unit': '%', 'Value': '90.5'},
+                'Global Store Efficiency': {'Name': 'Global Store Efficiency', 'Unit': '%', 'Value': '85.2'}
+            },
+            'Rules': [
+                {
+                    'Name': 'MemoryBound',
+                    'Type': 'WRN',
+                    'Description': 'Memory bandwidth utilization is high. Consider optimizing memory access patterns.',
+                    'Speedup_type': 'estimated',
+                    'Speedup': '15.5'
+                }
+            ]
             }
         },
         'complex_kernel_template': {
-            'Compute Workload': {
-                'metrics': [
-                    {'name': 'Executed Ipc Active', 'unit': 'inst/cycle', 'value': '0.85'}
-                ],
-                'rules': [
-                    {
-                        'name': 'ComputeBound',
-                        'type': 'OPT',
-                        'description': 'Increase arithmetic intensity to better utilize compute resources.',
-                        'speedup_type': 'theoretical',
-                        'speedup': '25.0'
-                    }
-                ]
+                    'Compute Workload': {
+            'Metrics': {
+                'Executed Ipc Active': {'Name': 'Executed Ipc Active', 'Unit': 'inst/cycle', 'Value': '0.85'}
+            },
+            'Rules': [
+                {
+                    'Name': 'ComputeBound',
+                    'Type': 'OPT',
+                    'Description': 'Increase arithmetic intensity to better utilize compute resources.',
+                    'Speedup_type': 'theoretical',
+                    'Speedup': '25.0'
+                }
+            ]
             }
         }
     }

@@ -164,20 +164,20 @@ class TestParseNcuCsvData:
 
         # Check Speed Of Light section metrics
         sol_section = result["simple_kernel"]["Speed Of Light"]
-        assert len(sol_section["metrics"]) == 3
-        assert len(sol_section["rules"]) == 2
+        assert len(sol_section["Metrics"]) == 3
+        assert len(sol_section["Rules"]) == 2
 
         # Check specific metric
-        dram_metric = sol_section["metrics"][0]
-        assert dram_metric["name"] == "DRAM Frequency"
-        assert dram_metric["unit"] == "hz"
-        assert dram_metric["value"] == "1,215,000,000"
+        dram_metric = sol_section["Metrics"]["DRAM Frequency"]
+        assert dram_metric["Name"] == "DRAM Frequency"
+        assert dram_metric["Unit"] == "hz"
+        assert dram_metric["Value"] == "1,215,000,000"
 
         # Check specific rule
-        sol_rule = sol_section["rules"][0]
-        assert sol_rule["name"] == "SOLBottleneck"
-        assert sol_rule["type"] == "OPT"
-        assert "Memory is more heavily utilized" in sol_rule["description"]
+        sol_rule = sol_section["Rules"][0]
+        assert sol_rule["Name"] == "SOLBottleneck"
+        assert sol_rule["Type"] == "OPT"
+        assert "Memory is more heavily utilized" in sol_rule["Description"]
 
     def test_parse_empty_csv(self, empty_csv_content):
         """Test parsing of empty CSV data."""
@@ -213,7 +213,7 @@ class TestParseNcuCsvData:
 
         # Should have some metrics and rules
         sol_section = kernel_data["Speed Of Light"]
-        assert len(sol_section["metrics"]) > 0 or len(sol_section["rules"]) > 0
+        assert len(sol_section["Metrics"]) > 0 or len(sol_section["Rules"]) > 0
 
 
 class TestAddPerSectionMarkdown:
@@ -226,29 +226,29 @@ class TestAddPerSectionMarkdown:
 
         # Check that markdown was added
         sol_section = result["simple_kernel"]["Speed Of Light"]
-        assert "markdown" in sol_section
-        assert "## Speed Of Light" in sol_section["markdown"]
+        assert "Markdown" in sol_section
+        assert "## Speed Of Light" in sol_section["Markdown"]
 
         # Check metrics table
-        assert "| Metric Name | Metric Unit | Metric Value |" in sol_section["markdown"]
-        assert "| DRAM Frequency | hz | 1,215,000,000 |" in sol_section["markdown"]
+        assert "| Metric Name | Metric Unit | Metric Value |" in sol_section["Markdown"]
+        assert "| DRAM Frequency | hz | 1,215,000,000 |" in sol_section["Markdown"]
 
         # Check rules
-        assert "🔧 **OPTIMIZATION**: Memory is more heavily utilized" in sol_section["markdown"]
+        assert "🔧 **OPTIMIZATION**: Memory is more heavily utilized" in sol_section["Markdown"]
 
     def test_add_markdown_empty_section(self):
         """Test adding markdown to empty section."""
         test_data = {
             "test_kernel": {
                 "Empty Section": {
-                    "metrics": [],
-                    "rules": []
+                    "Metrics": {},
+                    "Rules": []
                 }
             }
         }
 
         result = add_per_section_markdown(test_data)
-        markdown = result["test_kernel"]["Empty Section"]["markdown"]
+        markdown = result["test_kernel"]["Empty Section"]["Markdown"]
 
         assert "## Empty Section" in markdown
         # Should not contain metrics table or rules
@@ -260,20 +260,20 @@ class TestAddPerSectionMarkdown:
         test_data = {
             "test_kernel": {
                 "Test Section": {
-                    "metrics": [],
-                    "rules": [{
-                        "name": "TestRule",
-                        "type": "WRN",
-                        "description": "Test warning message",
-                        "speedup_type": "estimated",
-                        "speedup": "15.5"
+                    "Metrics": {},
+                    "Rules": [{
+                        "Name": "TestRule",
+                        "Type": "WRN",
+                        "Description": "Test warning message",
+                        "Speedup_type": "estimated",
+                        "Speedup": "15.5"
                     }]
                 }
             }
         }
 
         result = add_per_section_markdown(test_data)
-        markdown = result["test_kernel"]["Test Section"]["markdown"]
+        markdown = result["test_kernel"]["Test Section"]["Markdown"]
 
         assert "⚠️ **WARNING**: Test warning message" in markdown
         assert "*Estimated Speedup (estimated): 15.5%*" in markdown

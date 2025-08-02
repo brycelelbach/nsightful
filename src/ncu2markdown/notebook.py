@@ -115,23 +115,23 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
             # Extract all rules from all sections in sorted order, grouped by section
             rules_found = False
             for section_name, section_data in get_sorted_sections(sections):
-                if section_data['rules']:  # Only add section header if there are rules
+                if section_data['Rules']:  # Only add section header if there are rules
                     rules_found = True
 
                     # Add section header
                     summary_content.append(f"### {section_name}\n")
 
                     # Add all rules from this section
-                    for rule in section_data['rules']:
+                    for rule in section_data['Rules']:
                         # Format rule type with emoji
-                        prefix = format_rule_type(rule['type'])
+                        prefix = format_rule_type(rule['Type'])
 
                         # Add rule description
-                        summary_content.append(f"{prefix}: {rule['description']}")
+                        summary_content.append(f"{prefix}: {rule['Description']}")
 
                         # Add speedup information if available
-                        if rule['speedup'] and rule['speedup_type']:
-                            summary_content.append(f"*Estimated Speedup ({rule['speedup_type']}): {rule['speedup']}%*")
+                        if rule['Speedup'] and rule['Speedup_type']:
+                            summary_content.append(f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*")
 
                         summary_content.append("")  # Add blank line after each rule
 
@@ -154,8 +154,8 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
 
                 with section_output:
                     # Display the markdown content for this section
-                    if 'markdown' in section_data and section_data['markdown'].strip():
-                        display(Markdown(section_data['markdown']))
+                    if 'Markdown' in section_data and section_data['Markdown'].strip():
+                        display(Markdown(section_data['Markdown']))
                     else:
                         print(f"No content available for section: {section_name}")
 

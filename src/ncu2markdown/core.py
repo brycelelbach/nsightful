@@ -5,7 +5,7 @@ Core functionality for parsing and converting Nsight Compute CSV data to Markdow
 import csv
 import re
 from collections import defaultdict
-from typing import Dict, List, Tuple, Any, Iterable
+from typing import Dict, List, Tuple, Any, Iterable, Union
 
 
 # Mapping from raw NCU CSV section names to canonical user-facing names.
@@ -129,17 +129,16 @@ def format_rule_type(rule_type: str) -> str:
 
 
 def parse_ncu_csv_data(ncu_csv: Iterable[str]
-    ) ->Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]]:
+    ) ->Dict[str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]], List[Dict[str, str]]]]]]:
     """Parse Nsight Compute CSV and return structured data.
 
     Args:
         ncu_csv: Iterable object that produces lines of CSV, e.g. a file object.
 
     Returns:
-        dict: {kernel_name: {section_name: {'metrics': [], 'rules': []}}}
+        dict: {kernel_name: {section_name: {'Metrics': {}, 'Rules': []}}}
     """
-    # Data structure: kernel_name -> section_name -> {'metrics': [], 'rules': []}
-    kernels = defaultdict(lambda: defaultdict(lambda: {'metrics': [], 'rules': []}))
+    kernels = defaultdict(lambda: defaultdict(lambda: {'Metrics': {}, 'Rules': []}))
 
     reader = csv.DictReader(ncu_csv)
     for row in reader:
@@ -153,37 +152,40 @@ def parse_ncu_csv_data(ncu_csv: Iterable[str]
 
         # If this row has metric data
         if row['Metric Name'].strip():
+            metric_name = row['Metric Name'].strip()
             metric = {
-                'name': row['Metric Name'].strip(),
-                'unit': row['Metric Unit'].strip(),
-                'value': format_numeric_value(row['Metric Value'].strip())
+                'Name': metric_name,
+                'Unit': row['Metric Unit'].strip(),
+                'Value': format_numeric_value(row['Metric Value'].strip())
             }
-            kernels[kernel_name][section_name]['metrics'].append(metric)
+            kernels[kernel_name][section_name]['Metrics'][metric_name] = metric
 
         # If this row has rule data
         if row['Rule Name'].strip():
             rule = {
-                'name': row['Rule Name'].strip(),
-                'type': row['Rule Type'].strip(),
-                'description': row['Rule Description'].strip(),
-                'speedup_type': row['Estimated Speedup Type'].strip(),
-                'speedup': row['Estimated Speedup'].strip()
+                'Name': row['Rule Name'].strip(),
+                'Type': row['Rule Type'].strip(),
+                'Description': row['Rule Description'].strip(),
+                'Speedup_type': row['Estimated Speedup Type'].strip(),
+                'Speedup': row['Estimated Speedup'].strip()
             }
-            kernels[kernel_name][section_name]['rules'].append(rule)
+            kernels[kernel_name][section_name]['Rules'].append(rule)
 
     return kernels
 
 
-def add_per_section_markdown(ncu_data: Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]]
+def add_per_section_markdown(
+    ncu_data: Dict[str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]],
+                                                  List[Dict[str, str]]]]]]
     ) -> Dict[str, Dict[str, Dict[str, Any]]]:
     """Add per-section Markdown to the parsed Nsight Compute data.
 
     Args:
         ncu_data (dict): Data structure from parse_ncu_csv_data()
-                         Format: {kernel_name: {section_name: {'metrics': [], 'rules': []}}}
+                         Format: {kernel_name: {section_name: {'Metrics': {}, 'Rules': []}}}
 
     Returns:
-        dict: {kernel_name: {section_name: {'metrics': [], 'rules': [], 'markdown': str}}}
+        dict: {kernel_name: {section_name: {'Metrics': {}, 'Rules': [], 'Markdown': str}}}
     """
     for kernel_name, sections in ncu_data.items():
         for section_name, data in sections.items():
@@ -193,30 +195,30 @@ def add_per_section_markdown(ncu_data: Dict[str, Dict[str, Dict[str, List[Dict[s
             markdown_lines.append(f"## {section_name}\n")
 
             # Metrics table
-            if data['metrics']:
+            if data['Metrics']:
                 markdown_lines.append("| Metric Name | Metric Unit | Metric Value |")
                 markdown_lines.append("|-------------|-------------|--------------|")
-                for metric in data['metrics']:
-                    unit = metric['unit'] if metric['unit'] else ''
-                    value = metric['value'] if metric['value'] else ''
-                    markdown_lines.append(f"| {metric['name']} | {unit} | {value} |")
+                for metric in data['Metrics'].values():
+                    unit = metric['Unit'] if metric['Unit'] else ''
+                    value = metric['Value'] if metric['Value'] else ''
+                    markdown_lines.append(f"| {metric['Name']} | {unit} | {value} |")
                 markdown_lines.append("")
 
             # Rules/recommendations
-            for rule in data['rules']:
-                prefix = format_rule_type(rule['type'])
-                description = rule['description']
+            for rule in data['Rules']:
+                prefix = format_rule_type(rule['Type'])
+                description = rule['Description']
 
                 markdown_lines.append(f"{prefix}: {description}")
 
-                if rule['speedup'] and rule['speedup_type']:
-                    speedup_text = f"*Estimated Speedup ({rule['speedup_type']}): {rule['speedup']}%*"
+                if rule['Speedup'] and rule['Speedup_type']:
+                    speedup_text = f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*"
                     markdown_lines.append(speedup_text)
 
                 markdown_lines.append("")
 
             # Add the markdown content to the existing section data
-            data['markdown'] = "\n".join(markdown_lines)
+            data['Markdown'] = "\n".join(markdown_lines)
 
     return ncu_data
 
@@ -244,7 +246,7 @@ def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
 
         # Add each section's markdown in sorted order
         for section_name, section_data in get_sorted_sections(sections):
-            markdown_lines.append(section_data['markdown'])
+            markdown_lines.append(section_data['Markdown'])
 
         markdown_lines.append("---\n")  # Add separator between kernels
 

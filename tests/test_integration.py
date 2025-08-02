@@ -89,7 +89,7 @@ class TestRealDataProcessing:
 
         # Speed Of Light section should have metrics and/or rules
         sol_section = kernel_data['Speed Of Light']
-        assert len(sol_section['metrics']) > 0 or len(sol_section['rules']) > 0
+        assert len(sol_section['Metrics']) > 0 or len(sol_section['Rules']) > 0
 
     def test_real_csv_markdown_conversion(self, real_test_csv_file):
         """Test markdown conversion of real CSV data."""
