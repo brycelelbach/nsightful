@@ -144,7 +144,7 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
                     display(Markdown("## Summary\n\nNo rules found in any section."))
 
             # Create tabs for each section in sorted order
-            sorted_sections = get_sorted_sections(kernel_data)
+            sorted_sections = get_sorted_sections(sections)
             tab_children = [summary_output]  # Summary tab first
             tab_titles = ["Summary"]  # Summary tab title first
 
