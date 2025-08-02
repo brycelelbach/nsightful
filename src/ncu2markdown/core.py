@@ -8,15 +8,6 @@ from collections import defaultdict
 from typing import Dict, List, Tuple, Any, Iterable
 
 
-def extract_kernel_name(full_kernel_name: str) -> str:
-    """Extract the base kernel name from the full template name."""
-    # Extract everything before the first '[' or '('
-    match = re.match(r'^([^[\(]+)', full_kernel_name)
-    if match:
-        return match.group(1).strip()
-    return full_kernel_name
-
-
 # Combined section mappings and order - list of tuples (variation, canonical).
 # Order matters: canonical names will be sorted in the order they first appear.
 SECTION_MAPPINGS = [
@@ -54,6 +45,8 @@ SECTION_MAPPINGS = [
     ('Occupancy', 'Occupancy'),
 
     # Source Counters variations (canonical: Branching)
+    # The only metrics I've seen from this section are for branching or warp stalls;
+    # "source counters" seems confusing.
     ('Source Counters', 'Branching'),
     ('SourceCounters', 'Branching'),
 ]
@@ -106,6 +99,15 @@ def get_sorted_sections(sections: Dict[str, Any]) -> List[Tuple[str, Any]]:
     return sorted_sections
 
 
+def extract_kernel_name(full_kernel_name: str) -> str:
+    """Extract the base kernel name from the full template name."""
+    # Extract everything before the first '[' or '('
+    match = re.match(r'^([^[\(]+)', full_kernel_name)
+    if match:
+        return match.group(1).strip()
+    return full_kernel_name
+
+
 def format_numeric_value(value_str: str) -> str:
     """Format numeric values for better readability."""
     if not value_str:
@@ -143,8 +145,8 @@ def format_rule_type(rule_type: str) -> str:
         return f"**{rule_type}**"
 
 
-def parse_ncu_csv_data(ncu_csv: Iterable[str])
-    -> Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]]:
+def parse_ncu_csv_data(ncu_csv: Iterable[str]
+    ) ->Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]]:
     """Parse Nsight Compute CSV and return structured data.
 
     Args:
@@ -189,8 +191,8 @@ def parse_ncu_csv_data(ncu_csv: Iterable[str])
     return kernels
 
 
-def add_per_section_markdown(ncu_data: Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]])
-    -> Dict[str, Dict[str, Dict[str, Any]]]:
+def add_per_section_markdown(ncu_data: Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]]
+    ) -> Dict[str, Dict[str, Dict[str, Any]]]:
     """Add per-section Markdown to the parsed Nsight Compute data.
 
     Args:
