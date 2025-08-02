@@ -317,9 +317,23 @@ def display_ncu_data_in_notebook(ncu_csv):
       .widget-tab .p-TabBar-tab.p-mod-current .p-TabBar-tabLabel { color: #000; }
     }
 
-    /* Optional: make borders theme-aware too */
+    /* Make borders theme-aware too */
     .widget-output, .widget-tab .p-TabBar {
       border-color: var(--jp-border-color2, #ddd) !important;
+    }
+
+    /* Fit tab title to the length of text */
+    .widget-tab .p-TabBar-tab {
+      min-width: auto !important;
+      width: auto !important;
+      flex: 0 0 auto !important;
+    }
+
+    .widget-tab .p-TabBar-tabLabel {
+      white-space: nowrap !important;
+      text-overflow: clip !important;
+      overflow: visible !important;
+      padding: 0 0 !important;
     }
     </style>
     """))
