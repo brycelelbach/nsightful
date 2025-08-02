@@ -22,7 +22,6 @@ class TestPackageIntegration:
 
         # Test that utility functions are available
         assert hasattr(ncu2markdown, 'extract_kernel_name')
-        assert hasattr(ncu2markdown, 'normalize_section_name')
         assert hasattr(ncu2markdown, 'format_rule_type')
 
     def test_cli_entry_point(self, real_test_csv_file):

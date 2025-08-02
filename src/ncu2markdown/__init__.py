@@ -7,7 +7,6 @@ from .core import (
     parse_ncu_csv_data,
     convert_ncu_csv_to_flat_markdown,
     extract_kernel_name,
-    normalize_section_name,
     get_sorted_sections,
     format_numeric_value,
     format_rule_type
@@ -23,7 +22,6 @@ __all__ = [
     "convert_ncu_csv_to_flat_markdown",
     "display_ncu_data_in_notebook",
     "extract_kernel_name",
-    "normalize_section_name",
     "get_sorted_sections",
     "format_numeric_value",
     "format_rule_type"

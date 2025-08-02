@@ -7,7 +7,6 @@ import pytest
 from typing import Dict, Any
 
 from ncu2markdown.core import (
-    normalize_section_name,
     get_sorted_sections,
     extract_kernel_name,
     format_numeric_value,
@@ -17,51 +16,6 @@ from ncu2markdown.core import (
     convert_ncu_csv_to_flat_markdown
 )
 
-
-class TestNormalizeSectionName:
-    """Test section name normalization."""
-
-    def test_normalize_speed_of_light_variations(self):
-        """Test that all Speed Of Light variations are normalized correctly."""
-        assert normalize_section_name("GPU Speed Of Light Throughput") == "Speed Of Light"
-        assert normalize_section_name("SpeedOfLight") == "Speed Of Light"
-        assert normalize_section_name("SpeedOfLight_RooflineChart") == "Speed Of Light"
-
-    def test_normalize_memory_workload_variations(self):
-        """Test that all Memory Workload variations are normalized correctly."""
-        assert normalize_section_name("Memory Workload Analysis") == "Memory Workload"
-        assert normalize_section_name("MemoryWorkloadAnalysis") == "Memory Workload"
-        assert normalize_section_name("MemoryWorkloadAnalysis_Chart") == "Memory Workload"
-        assert normalize_section_name("MemoryWorkloadAnalysis_Tables") == "Memory Workload"
-
-    def test_normalize_compute_workload_variations(self):
-        """Test that all Compute Workload variations are normalized correctly."""
-        assert normalize_section_name("Compute Workload Analysis") == "Compute Workload"
-        assert normalize_section_name("ComputeWorkloadAnalysis") == "Compute Workload"
-
-    def test_normalize_other_sections(self):
-        """Test normalization of other section types."""
-        assert normalize_section_name("GPU and Memory Workload Distribution") == "Compute & Memory Distribution"
-        assert normalize_section_name("Source Counters") == "Branching"
-        assert normalize_section_name("SourceCounters") == "Branching"
-        assert normalize_section_name("Scheduler Statistics") == "Scheduler"
-        assert normalize_section_name("SchedulerStats") == "Scheduler"
-        assert normalize_section_name("Warp State Statistics") == "Warp State"
-        assert normalize_section_name("WarpStateStats") == "Warp State"
-
-    def test_normalize_unknown_section(self):
-        """Test that unknown sections are returned unchanged."""
-        assert normalize_section_name("Unknown Section") == "Unknown Section"
-        assert normalize_section_name("Custom Section Name") == "Custom Section Name"
-
-    def test_normalize_empty_section(self):
-        """Test handling of empty section names."""
-        assert normalize_section_name("") == ""
-        assert normalize_section_name("   ") == ""  # Strips whitespace
-
-    def test_normalize_none_section(self):
-        """Test handling of None section name."""
-        assert normalize_section_name(None) is None
 
 
 class TestGetSortedSections:

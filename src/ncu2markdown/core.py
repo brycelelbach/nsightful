@@ -8,62 +8,49 @@ from collections import defaultdict
 from typing import Dict, List, Tuple, Any, Iterable
 
 
-# Combined section mappings and order - list of tuples (variation, canonical).
-# Order matters: canonical names will be sorted in the order they first appear.
-SECTION_MAPPINGS = [
+# Mapping from raw NCU CSV section names to canonical user-facing names.
+# Order matters: canonical names will appear in output in the order they appear here.
+# All entries for a canonical name must be grouped together.
+SECTION_MAPPINGS = {
     # Speed Of Light variations (canonical: Speed Of Light)
-    ('GPU Speed Of Light Throughput', 'Speed Of Light'),
-    ('SpeedOfLight', 'Speed Of Light'),
-    ('SpeedOfLight_RooflineChart', 'Speed Of Light'),
+    'GPU Speed Of Light Throughput': 'Speed Of Light',
+    'SpeedOfLight': 'Speed Of Light',
+    'SpeedOfLight_RooflineChart': 'Speed Of Light',
 
     # Memory Workload variations (canonical: Memory Workload)
-    ('Memory Workload Analysis', 'Memory Workload'),
-    ('MemoryWorkloadAnalysis', 'Memory Workload'),
-    ('MemoryWorkloadAnalysis_Chart', 'Memory Workload'),
-    ('MemoryWorkloadAnalysis_Tables', 'Memory Workload'),
+    'Memory Workload Analysis': 'Memory Workload',
+    'MemoryWorkloadAnalysis': 'Memory Workload',
+    'MemoryWorkloadAnalysis_Chart': 'Memory Workload',
+    'MemoryWorkloadAnalysis_Tables': 'Memory Workload',
 
     # Compute Workload variations (canonical: Compute Workload)
-    ('Compute Workload Analysis', 'Compute Workload'),
-    ('ComputeWorkloadAnalysis', 'Compute Workload'),
+    'Compute Workload Analysis': 'Compute Workload',
+    'ComputeWorkloadAnalysis': 'Compute Workload',
 
-    ('GPU and Memory Workload Distribution', 'Compute & Memory Distribution'),
+    'GPU and Memory Workload Distribution': 'Compute & Memory Distribution',
 
     # Scheduler variations (canonical: Scheduler)
-    ('Scheduler Statistics', 'Scheduler'),
-    ('SchedulerStats', 'Scheduler'),
+    'Scheduler Statistics': 'Scheduler',
+    'SchedulerStats': 'Scheduler',
 
     # Warp State variations (canonical: Warp State)
-    ('Warp State Statistics', 'Warp State'),
-    ('WarpStateStats', 'Warp State'),
+    'Warp State Statistics': 'Warp State',
+    'WarpStateStats': 'Warp State',
 
-    ('Instruction Statistics', 'Instruction'),
+    'Instruction Statistics': 'Instruction',
 
-    ('Launch Statistics', 'Launch'),
+    'Launch Statistics': 'Launch',
 
-    ('PM Sampling', 'PM Sampling'),
+    'PM Sampling': 'PM Sampling',
 
-    ('Occupancy', 'Occupancy'),
+    'Occupancy': 'Occupancy',
 
     # Source Counters variations (canonical: Branching)
     # The only metrics I've seen from this section are for branching or warp stalls;
     # "source counters" seems confusing.
-    ('Source Counters', 'Branching'),
-    ('SourceCounters', 'Branching'),
-]
-
-
-def normalize_section_name(section_name: str) -> str:
-    """Normalize section names to merge similar sections."""
-    if not section_name:
-        return section_name
-
-    section = section_name.strip()
-
-    # Create mapping dict from the combined structure
-    section_mappings = dict(SECTION_MAPPINGS)
-
-    # Return the canonical name if we have a mapping, otherwise return original
-    return section_mappings.get(section, section)
+    'Source Counters': 'Branching',
+    'SourceCounters': 'Branching',
+}
 
 
 def get_sorted_sections(sections: Dict[str, Any]) -> List[Tuple[str, Any]]:
@@ -75,13 +62,9 @@ def get_sorted_sections(sections: Dict[str, Any]) -> List[Tuple[str, Any]]:
     Returns:
         list: List of (section_name, section_data) tuples in sorted order
     """
-    # Extract canonical names in order from SECTION_MAPPINGS (preserving order, removing duplicates)
-    seen_canonical = set()
-    section_order = []
-    for _, canonical_name in SECTION_MAPPINGS:
-        if canonical_name not in seen_canonical:
-            section_order.append(canonical_name)
-            seen_canonical.add(canonical_name)
+    # Get canonical section order from SECTION_MAPPINGS values.
+    # dict.fromkeys preserves insertion order & removes duplicates; python has no unique operation.
+    section_order = list(dict.fromkeys(SECTION_MAPPINGS.values()))
 
     # Sort sections, putting known sections first in order, then others
     sorted_sections = []
@@ -162,7 +145,7 @@ def parse_ncu_csv_data(ncu_csv: Iterable[str]
     for row in reader:
         full_kernel_name = row['Kernel Name']
         kernel_name = extract_kernel_name(full_kernel_name)
-        section_name = normalize_section_name(row['Section Name'])
+        section_name = SECTION_MAPPINGS.get(row['Section Name'], row['Section Name'])
 
         # Skip rows without section names
         if not section_name:
