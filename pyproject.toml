@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ncu2markdown"
+version = "0.1.0"
+description = "Convert NVIDIA Nsight Compute CSV output to Markdown that can be output to a file or displayed in a tabbed widget in Jupyter notebooks."
+readme = "README.md"
+license = {text = "Apache License 2.0 with LLVM exceptions"}
+authors = [
+    {name = "NVIDIA Corporation"}
+]
+maintainers = [
+    {name = "NVIDIA Corporation"}
+]
+keywords = ["nvidia", "nsight", "compute", "ncu", "cuda", "markdown", "csv", "performance", "profiling", "jupyter", "notebook"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Markup :: Markdown",
+    "Topic :: Utilities"
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+notebook = [
+    "ipywidgets>=7.0.0",
+    "IPython>=7.0.0"
+]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "flake8",
+    "mypy"
+]
+
+[project.urls]
+Homepage = "https://github.com/brycelelbach/ncu2markdown"
+Repository = "https://github.com/brycelelbach/ncu2markdown"
+Issues = "https://github.com/brycelelbach/ncu2markdown/issues"
+Documentation = "https://github.com/brycelelbach/ncu2markdown#readme"
+
+[project.scripts]
+ncu2markdown = "ncu2markdown.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
