@@ -2,3 +2,4 @@ __pycache__/
 src/*.egg-info/
 MANIFEST
 venv/
+.coverage

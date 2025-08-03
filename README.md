@@ -1,6 +1,7 @@
 # ncu2markdown
 
 [![Apache 2.0 with LLVM exceptions](https://img.shields.io/badge/license-Apache%202.0%20with%20LLVM%20exceptions-blue.svg)](LICENSE)
+[![Tests](https://github.com/brycelelbach/ncu2markdown/actions/workflows/test.yml/badge.svg)](https://github.com/brycelelbach/ncu2markdown/actions/workflows/test.yml)
 
 Convert [NVIDIA Nsight Compute](https://developer.nvidia.com/nsight-compute) CSV output to Markdown
 that can be output to a file or displayed in a tabbed widget in Jupyter notebooks.
@@ -16,7 +17,7 @@ pip install git+https://github.com/brycelelbach/ncu2markdown.git
 If you want to use the Jupyter notebook widget:
 
 ```bash
-pip install "git+https://github.com/brycelelbach/ncu2markdown.git[notebook]"
+pip install "ncu2markdown[notebook] @ git+https://github.com/brycelelbach/ncu2markdown.git"
 ```
 
 ## Quick Start
@@ -71,7 +72,7 @@ If you have an existing report file or use the Nsight JupyterLab extension to ru
 profile and collect a report, then you can display it with ncu2markdown:
 
 ```python
-!pip install "git+https://github.com/brycelelbach/ncu2markdown.git[notebook]"
+!pip install "ncu2markdown[notebook] @ git+https://github.com/brycelelbach/ncu2markdown.git"
 ```
 
 ```python
@@ -86,7 +87,7 @@ If you want to profile cells with ncu2markdown without the Nsight JupyterLab ext
 the cell must be self contained; it cannot depend on any other cells.
 
 ```bash
-!pip install "git+https://github.com/brycelelbach/ncu2markdown.git[notebook]"
+!pip install "ncu2markdown[notebook] @ git+https://github.com/brycelelbach/ncu2markdown.git"
 ```
 
 ```python
@@ -153,6 +154,52 @@ ncu2markdown.display_ncu_data_in_notebook(copy_blocked_csv)
 
 - Python 3.8+
 - For Jupyter notebook features: `ipywidgets>=7.0.0`, `IPython>=7.0.0`
+
+## Development
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/brycelelbach/ncu2markdown.git
+cd ncu2markdown
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install in development mode with dev dependencies
+pip install -e ".[dev]"
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run tests with coverage
+pytest --cov=src/ --cov-report=html
+
+# Run tests for specific Python versions (requires tox)
+pip install tox
+tox
+```
+
+### Running Code Quality Checks
+
+The project uses several tools to maintain code quality:
+
+```bash
+# Format code with black
+black .
+
+# Lint with flake8
+flake8 .
+
+# Type checking with mypy
+mypy src/
+```
 
 ## License
 

@@ -7,7 +7,7 @@ from .core import (
     parse_ncu_csv_data,
     add_per_section_markdown,
     get_sorted_sections,
-    format_rule_type
+    format_rule_type,
 )
 
 
@@ -30,12 +30,15 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
     # Disable nested scrolling in Google Colab because it scrolls past the tabs and selector.
     try:
         from google.colab import output
+
         output.no_vertical_scroll()
     except ImportError:
         pass
 
     # Ensure text in the widget respects dark/light mode.
-    display(HTML("""
+    display(
+        HTML(
+            """
     <style>
     /* Use JupyterLab theme variables when available */
     .widget-tab .p-TabBar .p-TabBar-tabLabel {
@@ -74,7 +77,9 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
       padding: 0 0 !important;
     }
     </style>
-    """))
+    """
+        )
+    )
 
     # Get list of kernel names
     kernel_names = list(ncu_data.keys())
@@ -83,9 +88,9 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
     kernel_dropdown = widgets.Dropdown(
         options=kernel_names,
         value=kernel_names[0] if kernel_names else None,
-        description='Kernel:',
-        style={'description_width': 'initial'},
-        layout=widgets.Layout(width='400px')
+        description="Kernel:",
+        style={"description_width": "initial"},
+        layout=widgets.Layout(width="400px"),
     )
 
     # Create output widget for displaying tabs
@@ -93,7 +98,7 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
 
     def update_tabs(change):
         """Update the tabs when kernel selection changes."""
-        selected_kernel = change['new']
+        selected_kernel = change["new"]
 
         with output_area:
             clear_output(wait=True)
@@ -115,23 +120,25 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
             # Extract all rules from all sections in sorted order, grouped by section
             rules_found = False
             for section_name, section_data in get_sorted_sections(sections):
-                if section_data['Rules']:  # Only add section header if there are rules
+                if section_data["Rules"]:  # Only add section header if there are rules
                     rules_found = True
 
                     # Add section header
                     summary_content.append(f"### {section_name}\n")
 
                     # Add all rules from this section
-                    for rule in section_data['Rules']:
+                    for rule in section_data["Rules"]:
                         # Format rule type with emoji
-                        prefix = format_rule_type(rule['Type'])
+                        prefix = format_rule_type(rule["Type"])
 
                         # Add rule description
                         summary_content.append(f"{prefix}: {rule['Description']}")
 
                         # Add speedup information if available
-                        if rule['Speedup'] and rule['Speedup_type']:
-                            summary_content.append(f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*")
+                        if rule["Speedup"] and rule["Speedup_type"]:
+                            summary_content.append(
+                                f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*"
+                            )
 
                         summary_content.append("")  # Add blank line after each rule
 
@@ -154,8 +161,8 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
 
                 with section_output:
                     # Display the markdown content for this section
-                    if 'Markdown' in section_data and section_data['Markdown'].strip():
-                        display(Markdown(section_data['Markdown']))
+                    if "Markdown" in section_data and section_data["Markdown"].strip():
+                        display(Markdown(section_data["Markdown"]))
                     else:
                         print(f"No content available for section: {section_name}")
 
@@ -174,11 +181,11 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
             display(tabs)
 
     # Set up the initial display
-    kernel_dropdown.observe(update_tabs, names='value')
+    kernel_dropdown.observe(update_tabs, names="value")
 
     # Display the dropdown
     display(kernel_dropdown)
     display(output_area)
 
     # Trigger initial display
-    update_tabs({'new': kernel_dropdown.value})
+    update_tabs({"new": kernel_dropdown.value})

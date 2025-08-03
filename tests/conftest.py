@@ -28,7 +28,7 @@ def sample_csv_content() -> str:
 @pytest.fixture
 def sample_csv_file(sample_csv_content: str) -> Generator[Path, None, None]:
     """Create a temporary CSV file with sample data."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
         f.write(sample_csv_content)
         temp_path = Path(f.name)
 
@@ -53,71 +53,95 @@ def empty_csv_content() -> str:
 @pytest.fixture
 def malformed_csv_content() -> str:
     """Provide malformed CSV content for testing error handling."""
-    return '''This is not CSV data
+    return """This is not CSV data
 Random text
-More random text'''
+More random text"""
 
 
 @pytest.fixture
 def expected_parsed_data() -> Dict[str, Any]:
     """Expected parsed data structure for sample CSV."""
     return {
-        'simple_kernel': {
-                    'Speed Of Light': {
-            'Metrics': {
-                'DRAM Frequency': {'Name': 'DRAM Frequency', 'Unit': 'hz', 'Value': '1,215,000,000.00'},
-                'SM Frequency': {'Name': 'SM Frequency', 'Unit': 'hz', 'Value': '1,410,000,000.50'},
-                'Memory Throughput': {'Name': 'Memory Throughput', 'Unit': '%', 'Value': '45.7'}
-            },
-            'Rules': [
-                {
-                    'Name': 'SOLBottleneck',
-                    'Type': 'OPT',
-                    'Description': 'Memory is more heavily utilized than Compute: Look at the Memory Workload Analysis section.',
-                    'Speedup_type': '',
-                    'Speedup': ''
+        "simple_kernel": {
+            "Speed Of Light": {
+                "Metrics": {
+                    "DRAM Frequency": {
+                        "Name": "DRAM Frequency",
+                        "Unit": "hz",
+                        "Value": "1,215,000,000.00",
+                    },
+                    "SM Frequency": {
+                        "Name": "SM Frequency",
+                        "Unit": "hz",
+                        "Value": "1,410,000,000.50",
+                    },
+                    "Memory Throughput": {
+                        "Name": "Memory Throughput",
+                        "Unit": "%",
+                        "Value": "45.7",
+                    },
                 },
-                {
-                    'Name': 'SOLFPRoofline',
-                    'Type': 'INF',
-                    'Description': 'The kernel achieved 0% of this device\'s fp32 peak performance.',
-                    'Speedup_type': '',
-                    'Speedup': ''
-                }
-            ]
+                "Rules": [
+                    {
+                        "Name": "SOLBottleneck",
+                        "Type": "OPT",
+                        "Description": "Memory is more heavily utilized than Compute: Look at the Memory Workload Analysis section.",
+                        "Speedup_type": "",
+                        "Speedup": "",
+                    },
+                    {
+                        "Name": "SOLFPRoofline",
+                        "Type": "INF",
+                        "Description": "The kernel achieved 0% of this device's fp32 peak performance.",
+                        "Speedup_type": "",
+                        "Speedup": "",
+                    },
+                ],
             },
-                    'Memory Workload': {
-            'Metrics': {
-                'Global Load Efficiency': {'Name': 'Global Load Efficiency', 'Unit': '%', 'Value': '90.5'},
-                'Global Store Efficiency': {'Name': 'Global Store Efficiency', 'Unit': '%', 'Value': '85.2'}
+            "Memory Workload": {
+                "Metrics": {
+                    "Global Load Efficiency": {
+                        "Name": "Global Load Efficiency",
+                        "Unit": "%",
+                        "Value": "90.5",
+                    },
+                    "Global Store Efficiency": {
+                        "Name": "Global Store Efficiency",
+                        "Unit": "%",
+                        "Value": "85.2",
+                    },
+                },
+                "Rules": [
+                    {
+                        "Name": "MemoryBound",
+                        "Type": "WRN",
+                        "Description": "Memory bandwidth utilization is high. Consider optimizing memory access patterns.",
+                        "Speedup_type": "estimated",
+                        "Speedup": "15.5",
+                    }
+                ],
             },
-            'Rules': [
-                {
-                    'Name': 'MemoryBound',
-                    'Type': 'WRN',
-                    'Description': 'Memory bandwidth utilization is high. Consider optimizing memory access patterns.',
-                    'Speedup_type': 'estimated',
-                    'Speedup': '15.5'
-                }
-            ]
+        },
+        "complex_kernel_template": {
+            "Compute Workload": {
+                "Metrics": {
+                    "Executed Ipc Active": {
+                        "Name": "Executed Ipc Active",
+                        "Unit": "inst/cycle",
+                        "Value": "0.85",
+                    }
+                },
+                "Rules": [
+                    {
+                        "Name": "ComputeBound",
+                        "Type": "OPT",
+                        "Description": "Increase arithmetic intensity to better utilize compute resources.",
+                        "Speedup_type": "theoretical",
+                        "Speedup": "25.0",
+                    }
+                ],
             }
         },
-        'complex_kernel_template': {
-                    'Compute Workload': {
-            'Metrics': {
-                'Executed Ipc Active': {'Name': 'Executed Ipc Active', 'Unit': 'inst/cycle', 'Value': '0.85'}
-            },
-            'Rules': [
-                {
-                    'Name': 'ComputeBound',
-                    'Type': 'OPT',
-                    'Description': 'Increase arithmetic intensity to better utilize compute resources.',
-                    'Speedup_type': 'theoretical',
-                    'Speedup': '25.0'
-                }
-            ]
-            }
-        }
     }
 
 

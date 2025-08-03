@@ -13,43 +13,33 @@ from typing import Dict, List, Tuple, Any, Iterable, Union
 # All entries for a canonical name must be grouped together.
 SECTION_MAPPINGS = {
     # Speed Of Light variations (canonical: Speed Of Light)
-    'GPU Speed Of Light Throughput': 'Speed Of Light',
-    'SpeedOfLight': 'Speed Of Light',
-    'SpeedOfLight_RooflineChart': 'Speed Of Light',
-
+    "GPU Speed Of Light Throughput": "Speed Of Light",
+    "SpeedOfLight": "Speed Of Light",
+    "SpeedOfLight_RooflineChart": "Speed Of Light",
     # Memory Workload variations (canonical: Memory Workload)
-    'Memory Workload Analysis': 'Memory Workload',
-    'MemoryWorkloadAnalysis': 'Memory Workload',
-    'MemoryWorkloadAnalysis_Chart': 'Memory Workload',
-    'MemoryWorkloadAnalysis_Tables': 'Memory Workload',
-
+    "Memory Workload Analysis": "Memory Workload",
+    "MemoryWorkloadAnalysis": "Memory Workload",
+    "MemoryWorkloadAnalysis_Chart": "Memory Workload",
+    "MemoryWorkloadAnalysis_Tables": "Memory Workload",
     # Compute Workload variations (canonical: Compute Workload)
-    'Compute Workload Analysis': 'Compute Workload',
-    'ComputeWorkloadAnalysis': 'Compute Workload',
-
-    'GPU and Memory Workload Distribution': 'Compute & Memory Distribution',
-
+    "Compute Workload Analysis": "Compute Workload",
+    "ComputeWorkloadAnalysis": "Compute Workload",
+    "GPU and Memory Workload Distribution": "Compute & Memory Distribution",
     # Scheduler variations (canonical: Scheduler)
-    'Scheduler Statistics': 'Scheduler',
-    'SchedulerStats': 'Scheduler',
-
+    "Scheduler Statistics": "Scheduler",
+    "SchedulerStats": "Scheduler",
     # Warp State variations (canonical: Warp State)
-    'Warp State Statistics': 'Warp State',
-    'WarpStateStats': 'Warp State',
-
-    'Instruction Statistics': 'Instruction',
-
-    'Launch Statistics': 'Launch',
-
-    'PM Sampling': 'PM Sampling',
-
-    'Occupancy': 'Occupancy',
-
+    "Warp State Statistics": "Warp State",
+    "WarpStateStats": "Warp State",
+    "Instruction Statistics": "Instruction",
+    "Launch Statistics": "Launch",
+    "PM Sampling": "PM Sampling",
+    "Occupancy": "Occupancy",
     # Source Counters variations (canonical: Branching)
     # The only metrics I've seen from this section are for branching or warp stalls;
     # "source counters" seems confusing.
-    'Source Counters': 'Branching',
-    'SourceCounters': 'Branching',
+    "Source Counters": "Branching",
+    "SourceCounters": "Branching",
 }
 
 
@@ -85,7 +75,7 @@ def get_sorted_sections(sections: Dict[str, Any]) -> List[Tuple[str, Any]]:
 def extract_kernel_name(full_kernel_name: str) -> str:
     """Extract the base kernel name from the full template name."""
     # Extract everything before the first '[' or '('
-    match = re.match(r'^([^[\(]+)', full_kernel_name)
+    match = re.match(r"^([^[\(]+)", full_kernel_name)
     if match:
         return match.group(1).strip()
     return full_kernel_name
@@ -97,10 +87,10 @@ def format_numeric_value(value_str: str) -> str:
         return ""
 
     # Handle comma-separated numbers
-    if ',' in value_str:
+    if "," in value_str:
         try:
             # Remove commas and check if it's a float
-            clean_value = value_str.replace(',', '')
+            clean_value = value_str.replace(",", "")
             float_val = float(clean_value)
 
             # If it's a large integer, add commas back
@@ -118,18 +108,19 @@ def format_numeric_value(value_str: str) -> str:
 
 def format_rule_type(rule_type: str) -> str:
     """Format rule type with appropriate emoji and styling."""
-    if rule_type == 'OPT':
+    if rule_type == "OPT":
         return "🔧 **OPTIMIZATION**"
-    elif rule_type == 'WRN':
+    elif rule_type == "WRN":
         return "⚠️ **WARNING**"
-    elif rule_type == 'INF':
+    elif rule_type == "INF":
         return "ℹ️ **INFO**"
     else:
         return f"**{rule_type}**"
 
 
-def parse_ncu_csv_data(ncu_csv: Iterable[str]
-    ) ->Dict[str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]], List[Dict[str, str]]]]]]:
+def parse_ncu_csv_data(
+    ncu_csv: Iterable[str],
+) -> Dict[str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]], List[Dict[str, str]]]]]]:
     """Parse Nsight Compute CSV and return structured data.
 
     Args:
@@ -138,46 +129,47 @@ def parse_ncu_csv_data(ncu_csv: Iterable[str]
     Returns:
         dict: {kernel_name: {section_name: {'Metrics': {}, 'Rules': []}}}
     """
-    kernels = defaultdict(lambda: defaultdict(lambda: {'Metrics': {}, 'Rules': []}))
+    kernels = defaultdict(lambda: defaultdict(lambda: {"Metrics": {}, "Rules": []}))
 
     reader = csv.DictReader(ncu_csv)
     for row in reader:
-        full_kernel_name = row['Kernel Name']
+        full_kernel_name = row["Kernel Name"]
         kernel_name = extract_kernel_name(full_kernel_name)
-        section_name = SECTION_MAPPINGS.get(row['Section Name'], row['Section Name'])
+        section_name = SECTION_MAPPINGS.get(row["Section Name"], row["Section Name"])
 
         # Skip rows without section names
         if not section_name:
             continue
 
         # If this row has metric data
-        if row['Metric Name'].strip():
-            metric_name = row['Metric Name'].strip()
+        if row["Metric Name"].strip():
+            metric_name = row["Metric Name"].strip()
             metric = {
-                'Name': metric_name,
-                'Unit': row['Metric Unit'].strip(),
-                'Value': format_numeric_value(row['Metric Value'].strip())
+                "Name": metric_name,
+                "Unit": row["Metric Unit"].strip(),
+                "Value": format_numeric_value(row["Metric Value"].strip()),
             }
-            kernels[kernel_name][section_name]['Metrics'][metric_name] = metric
+            kernels[kernel_name][section_name]["Metrics"][metric_name] = metric
 
         # If this row has rule data
-        if row['Rule Name'].strip():
+        if row["Rule Name"].strip():
             rule = {
-                'Name': row['Rule Name'].strip(),
-                'Type': row['Rule Type'].strip(),
-                'Description': row['Rule Description'].strip(),
-                'Speedup_type': row['Estimated Speedup Type'].strip(),
-                'Speedup': row['Estimated Speedup'].strip()
+                "Name": row["Rule Name"].strip(),
+                "Type": row["Rule Type"].strip(),
+                "Description": row["Rule Description"].strip(),
+                "Speedup_type": row["Estimated Speedup Type"].strip(),
+                "Speedup": row["Estimated Speedup"].strip(),
             }
-            kernels[kernel_name][section_name]['Rules'].append(rule)
+            kernels[kernel_name][section_name]["Rules"].append(rule)
 
     return kernels
 
 
 def add_per_section_markdown(
-    ncu_data: Dict[str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]],
-                                                  List[Dict[str, str]]]]]]
-    ) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    ncu_data: Dict[
+        str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]], List[Dict[str, str]]]]]
+    ]
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
     """Add per-section Markdown to the parsed Nsight Compute data.
 
     Args:
@@ -195,33 +187,34 @@ def add_per_section_markdown(
             markdown_lines.append(f"## {section_name}\n")
 
             # Metrics table
-            if data['Metrics']:
+            if data["Metrics"]:
                 markdown_lines.append("| Metric Name | Metric Unit | Metric Value |")
                 markdown_lines.append("|-------------|-------------|--------------|")
-                for metric in data['Metrics'].values():
-                    unit = metric['Unit'] if metric['Unit'] else ''
-                    value = metric['Value'] if metric['Value'] else ''
+                for metric in data["Metrics"].values():
+                    unit = metric["Unit"] if metric["Unit"] else ""
+                    value = metric["Value"] if metric["Value"] else ""
                     markdown_lines.append(f"| {metric['Name']} | {unit} | {value} |")
                 markdown_lines.append("")
 
             # Rules/recommendations
-            for rule in data['Rules']:
-                prefix = format_rule_type(rule['Type'])
-                description = rule['Description']
+            for rule in data["Rules"]:
+                prefix = format_rule_type(rule["Type"])
+                description = rule["Description"]
 
                 markdown_lines.append(f"{prefix}: {description}")
 
-                if rule['Speedup'] and rule['Speedup_type']:
-                    speedup_text = f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*"
+                if rule["Speedup"] and rule["Speedup_type"]:
+                    speedup_text = (
+                        f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*"
+                    )
                     markdown_lines.append(speedup_text)
 
                 markdown_lines.append("")
 
             # Add the markdown content to the existing section data
-            data['Markdown'] = "\n".join(markdown_lines)
+            data["Markdown"] = "\n".join(markdown_lines)
 
     return ncu_data
-
 
 
 def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
@@ -246,7 +239,7 @@ def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
 
         # Add each section's markdown in sorted order
         for section_name, section_data in get_sorted_sections(sections):
-            markdown_lines.append(section_data['Markdown'])
+            markdown_lines.append(section_data["Markdown"])
 
         markdown_lines.append("---\n")  # Add separator between kernels
 

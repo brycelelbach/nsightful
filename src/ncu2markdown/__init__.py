@@ -9,7 +9,7 @@ from .core import (
     extract_kernel_name,
     get_sorted_sections,
     format_numeric_value,
-    format_rule_type
+    format_rule_type,
 )
 
 from .notebook import display_ncu_data_in_notebook
@@ -24,5 +24,5 @@ __all__ = [
     "extract_kernel_name",
     "get_sorted_sections",
     "format_numeric_value",
-    "format_rule_type"
+    "format_rule_type",
 ]

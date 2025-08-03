@@ -21,20 +21,12 @@ Examples:
 Nsight Compute CSV files can be generated using:
   ncu --set full -o MYREPORT ./MYAPPLICATION
   ncu --import MYREPORT.ncu-rep --csv > MYREPORT.csv
-        """
+        """,
     )
 
-    parser.add_argument(
-        'csv_file',
-        help='Path to the NCU CSV file to convert'
-    )
+    parser.add_argument("csv_file", help="Path to the NCU CSV file to convert")
 
-    parser.add_argument(
-        '-o', '--output',
-        help='Output file path (default: stdout)',
-        type=Path
-    )
-
+    parser.add_argument("-o", "--output", help="Output file path (default: stdout)", type=Path)
 
     args = parser.parse_args()
 
@@ -49,11 +41,11 @@ Nsight Compute CSV files can be generated using:
         sys.exit(1)
 
     try:
-        with open(csv_file, 'r', encoding='utf-8') as ncu_csv:
+        with open(csv_file, "r", encoding="utf-8") as ncu_csv:
             markdown_content = convert_ncu_csv_to_flat_markdown(ncu_csv)
 
             if args.output:
-                with open(args.output, 'w', encoding='utf-8') as output_file:
+                with open(args.output, "w", encoding="utf-8") as output_file:
                     output_file.write(markdown_content)
             else:
                 print(markdown_content)

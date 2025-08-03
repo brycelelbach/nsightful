@@ -13,9 +13,8 @@ from ncu2markdown.core import (
     format_rule_type,
     parse_ncu_csv_data,
     add_per_section_markdown,
-    convert_ncu_csv_to_flat_markdown
+    convert_ncu_csv_to_flat_markdown,
 )
-
 
 
 class TestGetSortedSections:
@@ -27,7 +26,7 @@ class TestGetSortedSections:
             "Memory Workload": {"data": "mem"},
             "Speed Of Light": {"data": "sol"},
             "Compute Workload": {"data": "comp"},
-            "Scheduler": {"data": "sched"}
+            "Scheduler": {"data": "sched"},
         }
 
         sorted_sections = get_sorted_sections(sections)
@@ -42,7 +41,7 @@ class TestGetSortedSections:
         sections = {
             "Custom Section": {"data": "custom"},
             "Speed Of Light": {"data": "sol"},
-            "Another Custom": {"data": "custom2"}
+            "Another Custom": {"data": "custom2"},
         }
 
         sorted_sections = get_sorted_sections(sections)
@@ -198,7 +197,7 @@ class TestParseNcuCsvData:
 
     def test_parse_real_test_data(self, real_test_csv_file):
         """Test parsing of real test data file."""
-        with open(real_test_csv_file, 'r') as f:
+        with open(real_test_csv_file, "r") as f:
             result = parse_ncu_csv_data(f)
 
         # Should have copy_blocked kernel
@@ -238,14 +237,7 @@ class TestAddPerSectionMarkdown:
 
     def test_add_markdown_empty_section(self):
         """Test adding markdown to empty section."""
-        test_data = {
-            "test_kernel": {
-                "Empty Section": {
-                    "Metrics": {},
-                    "Rules": []
-                }
-            }
-        }
+        test_data = {"test_kernel": {"Empty Section": {"Metrics": {}, "Rules": []}}}
 
         result = add_per_section_markdown(test_data)
         markdown = result["test_kernel"]["Empty Section"]["Markdown"]
@@ -261,13 +253,15 @@ class TestAddPerSectionMarkdown:
             "test_kernel": {
                 "Test Section": {
                     "Metrics": {},
-                    "Rules": [{
-                        "Name": "TestRule",
-                        "Type": "WRN",
-                        "Description": "Test warning message",
-                        "Speedup_type": "estimated",
-                        "Speedup": "15.5"
-                    }]
+                    "Rules": [
+                        {
+                            "Name": "TestRule",
+                            "Type": "WRN",
+                            "Description": "Test warning message",
+                            "Speedup_type": "estimated",
+                            "Speedup": "15.5",
+                        }
+                    ],
                 }
             }
         }
@@ -316,7 +310,7 @@ class TestConvertNcuCsvToFlatMarkdown:
 
     def test_convert_real_test_data_to_markdown(self, real_test_csv_file):
         """Test conversion of real test data to markdown."""
-        with open(real_test_csv_file, 'r') as f:
+        with open(real_test_csv_file, "r") as f:
             result = convert_ncu_csv_to_flat_markdown(f)
 
         # Should have copy_blocked kernel
@@ -324,7 +318,7 @@ class TestConvertNcuCsvToFlatMarkdown:
 
         # Should have proper markdown structure
         assert "##" in result  # Section headers
-        assert "|" in result   # Tables
+        assert "|" in result  # Tables
 
         # Should be substantial content
         assert len(result) > 1000

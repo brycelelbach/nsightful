@@ -16,20 +16,20 @@ class TestPackageIntegration:
         import ncu2markdown
 
         # Test that main functions are available
-        assert hasattr(ncu2markdown, 'parse_ncu_csv_data')
-        assert hasattr(ncu2markdown, 'convert_ncu_csv_to_flat_markdown')
-        assert hasattr(ncu2markdown, 'display_ncu_data_in_notebook')
+        assert hasattr(ncu2markdown, "parse_ncu_csv_data")
+        assert hasattr(ncu2markdown, "convert_ncu_csv_to_flat_markdown")
+        assert hasattr(ncu2markdown, "display_ncu_data_in_notebook")
 
         # Test that utility functions are available
-        assert hasattr(ncu2markdown, 'extract_kernel_name')
-        assert hasattr(ncu2markdown, 'format_rule_type')
+        assert hasattr(ncu2markdown, "extract_kernel_name")
+        assert hasattr(ncu2markdown, "format_rule_type")
 
     def test_cli_entry_point(self, real_test_csv_file):
         """Test that the CLI entry point works."""
         # Test help option
-        result = subprocess.run([
-            sys.executable, '-m', 'ncu2markdown.cli', '--help'
-        ], capture_output=True, text=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "ncu2markdown.cli", "--help"], capture_output=True, text=True
+        )
 
         assert result.returncode == 0
         assert "Convert NVIDIA Nsight Compute" in result.stdout
@@ -39,7 +39,7 @@ class TestPackageIntegration:
         import ncu2markdown
 
         # Test the full pipeline
-        with open(sample_csv_file, 'r') as f:
+        with open(sample_csv_file, "r") as f:
             # Parse the data
             parsed_data = ncu2markdown.parse_ncu_csv_data(f)
             assert len(parsed_data) > 0
@@ -55,7 +55,8 @@ class TestPackageIntegration:
     def test_version_attribute(self):
         """Test that version attribute is available."""
         import ncu2markdown
-        assert hasattr(ncu2markdown, '__version__')
+
+        assert hasattr(ncu2markdown, "__version__")
         assert isinstance(ncu2markdown.__version__, str)
         assert len(ncu2markdown.__version__) > 0
 
@@ -74,45 +75,45 @@ class TestRealDataProcessing:
         """Test parsing of real CSV data."""
         import ncu2markdown
 
-        with open(real_test_csv_file, 'r') as f:
+        with open(real_test_csv_file, "r") as f:
             parsed_data = ncu2markdown.parse_ncu_csv_data(f)
 
         # Should have parsed the copy_blocked kernel
-        assert 'copy_blocked' in parsed_data
+        assert "copy_blocked" in parsed_data
 
         # Should have multiple sections
-        kernel_data = parsed_data['copy_blocked']
+        kernel_data = parsed_data["copy_blocked"]
         assert len(kernel_data) > 3  # Expect multiple sections
 
         # Should have Speed Of Light section (normalized)
-        assert 'Speed Of Light' in kernel_data
+        assert "Speed Of Light" in kernel_data
 
         # Speed Of Light section should have metrics and/or rules
-        sol_section = kernel_data['Speed Of Light']
-        assert len(sol_section['Metrics']) > 0 or len(sol_section['Rules']) > 0
+        sol_section = kernel_data["Speed Of Light"]
+        assert len(sol_section["Metrics"]) > 0 or len(sol_section["Rules"]) > 0
 
     def test_real_csv_markdown_conversion(self, real_test_csv_file):
         """Test markdown conversion of real CSV data."""
         import ncu2markdown
 
-        with open(real_test_csv_file, 'r') as f:
+        with open(real_test_csv_file, "r") as f:
             markdown_result = ncu2markdown.convert_ncu_csv_to_flat_markdown(f)
 
         # Should have substantial content
         assert len(markdown_result) > 5000
 
         # Should have proper structure
-        assert '# copy_blocked' in markdown_result
-        assert '## Speed Of Light' in markdown_result
+        assert "# copy_blocked" in markdown_result
+        assert "## Speed Of Light" in markdown_result
 
         # Should have tables
-        assert '| Metric Name | Metric Unit | Metric Value |' in markdown_result
+        assert "| Metric Name | Metric Unit | Metric Value |" in markdown_result
 
         # Should have formatted rules
-        assert '🔧 **OPTIMIZATION**:' in markdown_result or '⚠️ **WARNING**:' in markdown_result
+        assert "🔧 **OPTIMIZATION**:" in markdown_result or "⚠️ **WARNING**:" in markdown_result
 
         # Should have section separators
-        assert '---' in markdown_result
+        assert "---" in markdown_result
 
 
 class TestErrorHandling:
@@ -141,7 +142,7 @@ class TestErrorHandling:
         import io
 
         # CSV with headers but no data
-        empty_csv = '''ID,Process ID,Process Name,Host Name,Kernel Name,Context,Stream,Block Size,Grid Size,Device,CC,Section Name,Metric Name,Metric Unit,Metric Value,Rule Name,Rule Type,Rule Description,Estimated Speedup Type,Estimated Speedup'''
+        empty_csv = """ID,Process ID,Process Name,Host Name,Kernel Name,Context,Stream,Block Size,Grid Size,Device,CC,Section Name,Metric Name,Metric Unit,Metric Value,Rule Name,Rule Type,Rule Description,Estimated Speedup Type,Estimated Speedup"""
 
         csv_io = io.StringIO(empty_csv)
         result = ncu2markdown.parse_ncu_csv_data(csv_io)

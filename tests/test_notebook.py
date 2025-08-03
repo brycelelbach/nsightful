@@ -14,7 +14,7 @@ class TestDisplayNcuDataInNotebook:
 
     def test_missing_dependencies_handling(self, capsys, sample_csv_io):
         """Test handling when ipywidgets/IPython are not available."""
-        with patch('builtins.__import__', side_effect=ImportError):
+        with patch("builtins.__import__", side_effect=ImportError):
             display_ncu_data_in_notebook(sample_csv_io)
 
         captured = capsys.readouterr()
@@ -45,15 +45,18 @@ class TestDisplayNcuDataInNotebook:
         mock_widgets.Layout.return_value = Mock()
 
         # Mock the imports
-        with patch.dict('sys.modules', {
-            'ipywidgets': mock_widgets,
-            'IPython.display': Mock(
-                display=mock_display,
-                HTML=mock_html,
-                Markdown=mock_markdown,
-                clear_output=mock_clear_output
-            )
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "ipywidgets": mock_widgets,
+                "IPython.display": Mock(
+                    display=mock_display,
+                    HTML=mock_html,
+                    Markdown=mock_markdown,
+                    clear_output=mock_clear_output,
+                ),
+            },
+        ):
             # This should not raise an exception
             display_ncu_data_in_notebook(sample_csv_io)
 
@@ -64,8 +67,8 @@ class TestDisplayNcuDataInNotebook:
     def test_real_data_parsing(self, real_test_csv_file):
         """Test that notebook display can parse real data without widgets."""
         # Test with ImportError to verify parsing works
-        with patch('builtins.__import__', side_effect=ImportError):
-            with open(real_test_csv_file, 'r') as f:
+        with patch("builtins.__import__", side_effect=ImportError):
+            with open(real_test_csv_file, "r") as f:
                 # Should not crash even though widgets are not available
                 display_ncu_data_in_notebook(f)
 
@@ -76,7 +79,7 @@ class TestDisplayNcuDataInNotebook:
         csv_io = io.StringIO(empty_csv)
 
         # Test with ImportError - should handle gracefully
-        with patch('builtins.__import__', side_effect=ImportError):
+        with patch("builtins.__import__", side_effect=ImportError):
             display_ncu_data_in_notebook(csv_io)
 
     def test_widget_creation_flow(self, sample_csv_io):
@@ -103,20 +106,17 @@ class TestDisplayNcuDataInNotebook:
 
         # Mock the module imports
         modules = {
-            'ipywidgets': mock_widgets,
-            'IPython': mock_ipython,
-            'IPython.display': Mock(
-                display=Mock(),
-                HTML=Mock(),
-                Markdown=Mock(),
-                clear_output=Mock()
+            "ipywidgets": mock_widgets,
+            "IPython": mock_ipython,
+            "IPython.display": Mock(
+                display=Mock(), HTML=Mock(), Markdown=Mock(), clear_output=Mock()
             ),
-            'google': Mock(),
-            'google.colab': Mock(),
-            'google.colab.output': Mock()
+            "google": Mock(),
+            "google.colab": Mock(),
+            "google.colab.output": Mock(),
         }
 
-        with patch.dict('sys.modules', modules):
+        with patch.dict("sys.modules", modules):
             # Import should succeed and widgets should be created
             display_ncu_data_in_notebook(sample_csv_io)
 
@@ -126,9 +126,9 @@ class TestDisplayNcuDataInNotebook:
 
             # Verify dropdown setup
             dropdown_call = mock_widgets.Dropdown.call_args
-            assert 'options' in dropdown_call.kwargs
-            assert 'description' in dropdown_call.kwargs
-            assert dropdown_call.kwargs['description'] == 'Kernel:'
+            assert "options" in dropdown_call.kwargs
+            assert "description" in dropdown_call.kwargs
+            assert dropdown_call.kwargs["description"] == "Kernel:"
 
             # Verify observe was set up
             mock_dropdown.observe.assert_called_once()
@@ -149,17 +149,14 @@ class TestDisplayNcuDataInNotebook:
 
         # Test both with and without Google Colab
         modules_without_colab = {
-            'ipywidgets': mock_widgets,
-            'IPython': mock_ipython,
-            'IPython.display': Mock(
-                display=Mock(),
-                HTML=Mock(),
-                Markdown=Mock(),
-                clear_output=Mock()
-            )
+            "ipywidgets": mock_widgets,
+            "IPython": mock_ipython,
+            "IPython.display": Mock(
+                display=Mock(), HTML=Mock(), Markdown=Mock(), clear_output=Mock()
+            ),
         }
 
-        with patch.dict('sys.modules', modules_without_colab):
+        with patch.dict("sys.modules", modules_without_colab):
             # Should work without Google Colab
             display_ncu_data_in_notebook(sample_csv_io)
             mock_widgets.Dropdown.assert_called_once()

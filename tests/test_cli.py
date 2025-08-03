@@ -17,7 +17,7 @@ class TestCliMain:
     def test_help_option(self, capsys):
         """Test that help option displays help message."""
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, 'argv', ['ncu2markdown', '--help']):
+            with patch.object(sys, "argv", ["ncu2markdown", "--help"]):
                 main()
 
         assert excinfo.value.code == 0
@@ -28,7 +28,7 @@ class TestCliMain:
     def test_missing_file_argument(self, capsys):
         """Test error when no CSV file argument is provided."""
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, 'argv', ['ncu2markdown']):
+            with patch.object(sys, "argv", ["ncu2markdown"]):
                 main()
 
         assert excinfo.value.code == 2  # argparse error code
@@ -40,7 +40,7 @@ class TestCliMain:
         nonexistent_file = "nonexistent_file.csv"
 
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, 'argv', ['ncu2markdown', nonexistent_file]):
+            with patch.object(sys, "argv", ["ncu2markdown", nonexistent_file]):
                 main()
 
         assert excinfo.value.code == 1
@@ -53,7 +53,7 @@ class TestCliMain:
         test_dir.mkdir()
 
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, 'argv', ['ncu2markdown', str(test_dir)]):
+            with patch.object(sys, "argv", ["ncu2markdown", str(test_dir)]):
                 main()
 
         assert excinfo.value.code == 1
@@ -62,7 +62,7 @@ class TestCliMain:
 
     def test_successful_conversion_to_stdout(self, capsys, sample_csv_file):
         """Test successful conversion with output to stdout."""
-        with patch.object(sys, 'argv', ['ncu2markdown', str(sample_csv_file)]):
+        with patch.object(sys, "argv", ["ncu2markdown", str(sample_csv_file)]):
             main()
 
         captured = capsys.readouterr()
@@ -78,7 +78,9 @@ class TestCliMain:
         """Test successful conversion with output to file."""
         output_file = tmp_path / "output.md"
 
-        with patch.object(sys, 'argv', ['ncu2markdown', str(sample_csv_file), '-o', str(output_file)]):
+        with patch.object(
+            sys, "argv", ["ncu2markdown", str(sample_csv_file), "-o", str(output_file)]
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -98,7 +100,9 @@ class TestCliMain:
         """Test using the long form of the output option."""
         output_file = tmp_path / "output.md"
 
-        with patch.object(sys, 'argv', ['ncu2markdown', str(sample_csv_file), '--output', str(output_file)]):
+        with patch.object(
+            sys, "argv", ["ncu2markdown", str(sample_csv_file), "--output", str(output_file)]
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -116,9 +120,9 @@ class TestCliMain:
         test_file.write_text("test content")
 
         # Mock permission error
-        with patch('builtins.open', side_effect=PermissionError("Permission denied")):
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             with pytest.raises(SystemExit) as excinfo:
-                with patch.object(sys, 'argv', ['ncu2markdown', str(test_file)]):
+                with patch.object(sys, "argv", ["ncu2markdown", str(test_file)]):
                     main()
 
         assert excinfo.value.code == 1
@@ -130,21 +134,25 @@ class TestCliMain:
         output_file = tmp_path / "readonly_output.md"
 
         # Create a scenario where we can't write to the output file
-        def mock_open_func(filename, mode='r', **kwargs):
-            if str(output_file) in str(filename) and 'w' in mode:
+        def mock_open_func(filename, mode="r", **kwargs):
+            if str(output_file) in str(filename) and "w" in mode:
                 raise PermissionError("Permission denied")
             return mock_open(read_data="sample csv data").return_value
 
-        with patch('builtins.open', side_effect=mock_open_func):
+        with patch("builtins.open", side_effect=mock_open_func):
             with pytest.raises(SystemExit) as excinfo:
-                with patch.object(sys, 'argv', ['ncu2markdown', str(sample_csv_file), '-o', str(output_file)]):
+                with patch.object(
+                    sys, "argv", ["ncu2markdown", str(sample_csv_file), "-o", str(output_file)]
+                ):
                     main()
 
         assert excinfo.value.code == 1
         captured = capsys.readouterr()
         # The error message could be either about file processing or permission denied
-        assert ("Error: During file processing:" in captured.err or
-                "Error: Permission denied accessing" in captured.err)
+        assert (
+            "Error: During file processing:" in captured.err
+            or "Error: Permission denied accessing" in captured.err
+        )
 
     def test_malformed_csv_error(self, capsys, tmp_path):
         """Test error handling for malformed CSV data."""
@@ -152,7 +160,7 @@ class TestCliMain:
         malformed_file.write_text("This is not valid CSV data\nNo headers here")
 
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, 'argv', ['ncu2markdown', str(malformed_file)]):
+            with patch.object(sys, "argv", ["ncu2markdown", str(malformed_file)]):
                 main()
 
         assert excinfo.value.code == 1
@@ -162,13 +170,13 @@ class TestCliMain:
     def test_utf8_encoding_handling(self, capsys, tmp_path):
         """Test that CLI properly handles UTF-8 encoding."""
         # Create a CSV file with UTF-8 content (including special characters)
-        utf8_content = '''ID,Process ID,Process Name,Host Name,Kernel Name,Context,Stream,Block Size,Grid Size,Device,CC,Section Name,Metric Name,Metric Unit,Metric Value,Rule Name,Rule Type,Rule Description,Estimated Speedup Type,Estimated Speedup
-0,1234,test_app,localhost,test_kernel_🚀,1,0,(256, 1, 1),(128, 1, 1),0,7.5,Speed Of Light,Frequency,Hz,1000000,,,,'''
+        utf8_content = """ID,Process ID,Process Name,Host Name,Kernel Name,Context,Stream,Block Size,Grid Size,Device,CC,Section Name,Metric Name,Metric Unit,Metric Value,Rule Name,Rule Type,Rule Description,Estimated Speedup Type,Estimated Speedup
+0,1234,test_app,localhost,test_kernel_🚀,1,0,(256, 1, 1),(128, 1, 1),0,7.5,Speed Of Light,Frequency,Hz,1000000,,,,"""
 
         utf8_file = tmp_path / "utf8_test.csv"
-        utf8_file.write_text(utf8_content, encoding='utf-8')
+        utf8_file.write_text(utf8_content, encoding="utf-8")
 
-        with patch.object(sys, 'argv', ['ncu2markdown', str(utf8_file)]):
+        with patch.object(sys, "argv", ["ncu2markdown", str(utf8_file)]):
             main()
 
         captured = capsys.readouterr()
@@ -178,14 +186,14 @@ class TestCliMain:
 
     def test_real_test_data_conversion(self, capsys, real_test_csv_file):
         """Test conversion of real test data file."""
-        with patch.object(sys, 'argv', ['ncu2markdown', str(real_test_csv_file)]):
+        with patch.object(sys, "argv", ["ncu2markdown", str(real_test_csv_file)]):
             main()
 
         captured = capsys.readouterr()
         # Should successfully convert real data
         assert "# copy_blocked" in captured.out
         assert "##" in captured.out  # Should have section headers
-        assert "|" in captured.out   # Should have tables
+        assert "|" in captured.out  # Should have tables
         assert captured.err == ""
 
         # Should be substantial output
@@ -198,7 +206,7 @@ class TestCliMain:
 
         # This might raise an exception or produce empty output
         # depending on how csv.DictReader handles empty files
-        with patch.object(sys, 'argv', ['ncu2markdown', str(empty_file)]):
+        with patch.object(sys, "argv", ["ncu2markdown", str(empty_file)]):
             try:
                 main()
                 captured = capsys.readouterr()
@@ -217,7 +225,7 @@ class TestCliArgumentParsing:
     def test_csv_file_argument_required(self):
         """Test that CSV file argument is required."""
         with pytest.raises(SystemExit):
-            with patch.object(sys, 'argv', ['ncu2markdown']):
+            with patch.object(sys, "argv", ["ncu2markdown"]):
                 main()
 
     def test_output_option_parsing(self, sample_csv_file, tmp_path):
@@ -225,7 +233,9 @@ class TestCliArgumentParsing:
         output_file = tmp_path / "test_output.md"
 
         # Test short form
-        with patch.object(sys, 'argv', ['ncu2markdown', str(sample_csv_file), '-o', str(output_file)]):
+        with patch.object(
+            sys, "argv", ["ncu2markdown", str(sample_csv_file), "-o", str(output_file)]
+        ):
             main()
         assert output_file.exists()
 
@@ -233,14 +243,16 @@ class TestCliArgumentParsing:
         output_file.unlink()
 
         # Test long form
-        with patch.object(sys, 'argv', ['ncu2markdown', str(sample_csv_file), '--output', str(output_file)]):
+        with patch.object(
+            sys, "argv", ["ncu2markdown", str(sample_csv_file), "--output", str(output_file)]
+        ):
             main()
         assert output_file.exists()
 
     def test_help_message_content(self, capsys):
         """Test that help message contains expected information."""
         with pytest.raises(SystemExit):
-            with patch.object(sys, 'argv', ['ncu2markdown', '--help']):
+            with patch.object(sys, "argv", ["ncu2markdown", "--help"]):
                 main()
 
         captured = capsys.readouterr()
