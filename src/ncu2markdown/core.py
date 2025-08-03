@@ -168,7 +168,7 @@ def parse_ncu_csv_data(
 def add_per_section_markdown(
     ncu_data: Dict[
         str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]], List[Dict[str, str]]]]]
-    ]
+    ],
 ) -> Dict[str, Dict[str, Dict[str, Any]]]:
     """Add per-section Markdown to the parsed Nsight Compute data.
 
