@@ -3,3 +3,4 @@ src/*.egg-info/
 MANIFEST
 venv/
 .coverage
+.cursor/rules/
