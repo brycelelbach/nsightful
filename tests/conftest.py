@@ -147,5 +147,5 @@ def expected_parsed_data() -> Dict[str, Any]:
 
 @pytest.fixture
 def real_test_csv_file() -> Path:
-    """Path to the real test CSV file in test_data directory."""
-    return Path("test_data/copy_blocked.csv")
+    """Path to the real test CSV file in tests directory."""
+    return Path("tests/copy_blocked.csv")
