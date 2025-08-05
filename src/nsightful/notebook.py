@@ -204,14 +204,14 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
 
 
 def display_nsys_sqlite_file_in_notebook(
-    nsys_file: str, title: str = "Nsight Systems", filename: str = "nsys.json"
+    nsys_file: str, title: str = "Nsight Systems"
 ) -> None:
     conn = sqlite3.connect(nsys_file)
     conn.row_factory = sqlite3.Row
 
     nsys_json = convert_nsys_sqlite_to_json(conn)
 
-    display_nsys_json_in_notebook(nsys_json, title, filename)
+    display_nsys_json_in_notebook(nsys_json, title, nsys_file)
 
 
 def display_nsys_sqlite_in_notebook(
