@@ -16,9 +16,9 @@ class TestPackageIntegration:
         import nsightful
 
         # Test that main functions are available
-        assert hasattr(nsightful, "parse_ncu_csv_data")
+        assert hasattr(nsightful, "parse_ncu_csv")
         assert hasattr(nsightful, "convert_ncu_csv_to_flat_markdown")
-        assert hasattr(nsightful, "display_ncu_report_in_notebook")
+        assert hasattr(nsightful, "display_ncu_csv_in_notebook")
 
         # Test that utility functions are available
         assert hasattr(nsightful, "extract_kernel_name")
@@ -32,7 +32,9 @@ class TestPackageIntegration:
         )
 
         assert result.returncode == 0
-        assert "Convert NVIDIA Nsight Compute" in result.stdout
+        assert "Convert NVIDIA Nsight output to other formats" in result.stdout
+        assert "ncu" in result.stdout
+        assert "nsys" in result.stdout
 
     def test_end_to_end_conversion(self, sample_csv_file):
         """Test end-to-end conversion from CSV to markdown."""
@@ -41,7 +43,7 @@ class TestPackageIntegration:
         # Test the full pipeline
         with open(sample_csv_file, "r") as f:
             # Parse the data
-            parsed_data = nsightful.parse_ncu_csv_data(f)
+            parsed_data = nsightful.parse_ncu_csv(f)
             assert len(parsed_data) > 0
 
             # Reset file pointer
@@ -76,7 +78,7 @@ class TestRealDataProcessing:
         import nsightful
 
         with open(real_test_csv_file, "r") as f:
-            parsed_data = nsightful.parse_ncu_csv_data(f)
+            parsed_data = nsightful.parse_ncu_csv(f)
 
         # Should have parsed the copy_blocked kernel
         assert "copy_blocked" in parsed_data
@@ -129,7 +131,7 @@ class TestErrorHandling:
 
         # Should not crash, might return empty data
         try:
-            result = nsightful.parse_ncu_csv_data(csv_io)
+            result = nsightful.parse_ncu_csv(csv_io)
             # If it succeeds, should return empty or minimal data
             assert isinstance(result, dict)
         except Exception:
@@ -145,7 +147,7 @@ class TestErrorHandling:
         empty_csv = """ID,Process ID,Process Name,Host Name,Kernel Name,Context,Stream,Block Size,Grid Size,Device,CC,Section Name,Metric Name,Metric Unit,Metric Value,Rule Name,Rule Type,Rule Description,Estimated Speedup Type,Estimated Speedup"""
 
         csv_io = io.StringIO(empty_csv)
-        result = nsightful.parse_ncu_csv_data(csv_io)
+        result = nsightful.parse_ncu_csv(csv_io)
 
         # Should return empty dict
         assert result == {}

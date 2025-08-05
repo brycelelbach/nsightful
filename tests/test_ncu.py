@@ -11,7 +11,7 @@ from nsightful.ncu import (
     extract_kernel_name,
     format_numeric_value,
     format_ncu_rule_type,
-    parse_ncu_csv_data,
+    parse_ncu_csv,
     add_per_section_ncu_markdown,
     convert_ncu_csv_to_flat_markdown,
 )
@@ -155,7 +155,7 @@ class TestParseNcuCsvData:
 
     def test_parse_sample_csv(self, sample_csv_io, expected_parsed_data):
         """Test parsing of sample CSV data."""
-        result = parse_ncu_csv_data(sample_csv_io)
+        result = parse_ncu_csv(sample_csv_io)
 
         # Check that we have the expected kernels
         assert "simple_kernel" in result
@@ -181,7 +181,7 @@ class TestParseNcuCsvData:
     def test_parse_empty_csv(self, empty_csv_content):
         """Test parsing of empty CSV data."""
         csv_io = io.StringIO(empty_csv_content)
-        result = parse_ncu_csv_data(csv_io)
+        result = parse_ncu_csv(csv_io)
         assert result == {}
 
     def test_parse_csv_with_empty_sections(self):
@@ -190,7 +190,7 @@ class TestParseNcuCsvData:
 "0","1234","test_app","localhost","test_kernel","1","0","(256, 1, 1)","(128, 1, 1)","0","7.5","","Test Metric","unit","value","","","",""'''
 
         csv_io = io.StringIO(csv_content)
-        result = parse_ncu_csv_data(csv_io)
+        result = parse_ncu_csv(csv_io)
 
         # Should skip rows with empty section names
         assert result == {}
@@ -198,7 +198,7 @@ class TestParseNcuCsvData:
     def test_parse_real_test_data(self, real_test_csv_file):
         """Test parsing of real test data file."""
         with open(real_test_csv_file, "r") as f:
-            result = parse_ncu_csv_data(f)
+            result = parse_ncu_csv(f)
 
         # Should have copy_blocked kernel
         assert "copy_blocked" in result
@@ -220,7 +220,7 @@ class TestAddPerSectionMarkdown:
 
     def test_add_markdown_to_parsed_data(self, sample_csv_io):
         """Test adding markdown to parsed data."""
-        parsed_data = parse_ncu_csv_data(sample_csv_io)
+        parsed_data = parse_ncu_csv(sample_csv_io)
         result = add_per_section_ncu_markdown(parsed_data)
 
         # Check that markdown was added

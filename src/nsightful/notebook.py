@@ -2,16 +2,26 @@
 Jupyter notebook display functionality for Nsight Compute data.
 """
 
+import base64
+import sqlite3
+import csv
 from typing import Iterable
 from .ncu import (
-    parse_ncu_csv_data,
+    parse_ncu_csv,
     add_per_section_ncu_markdown,
     get_sorted_ncu_sections,
     format_ncu_rule_type,
 )
+from .nsys import convert_nsys_sqlite_to_json
 
 
-def display_ncu_report_in_notebook(ncu_csv: Iterable[str]) -> None:
+def display_ncu_csv_file_in_notebook(ncu_file: str) -> None:
+    with open(ncu_file, "r") as f:
+        ncu_csv = csv.DictReader(f)
+        display_ncu_csv_in_notebook(ncu_csv)
+
+
+def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
     """Display NCU data in a Jupyter notebook with tabs and a kernel selector.
 
     Args:
@@ -25,7 +35,7 @@ def display_ncu_report_in_notebook(ncu_csv: Iterable[str]) -> None:
         print("Install with: pip install ipywidgets")
         return
 
-    ncu_dict = add_per_section_ncu_markdown(parse_ncu_csv_data(ncu_csv))
+    ncu_dict = add_per_section_ncu_markdown(parse_ncu_csv(ncu_csv))
 
     # Disable nested scrolling in Google Colab because it scrolls past the tabs and selector.
     try:
@@ -189,3 +199,79 @@ def display_ncu_report_in_notebook(ncu_csv: Iterable[str]) -> None:
 
     # Trigger initial display
     update_tabs({"new": kernel_dropdown.value})
+
+
+def display_nsys_sqlite_file_in_notebook(nsys_file: str, title="Nsight Systems", filename="nsys.json") -> None:
+    conn = sqlite3.connect(nsys_file)
+    conn.row_factory = sqlite3.Row
+
+    nsys_json = convert_nsys_sqlite_to_json(conn)
+
+    display_nsys_json_in_notebook(nsys_json, title, filename)
+
+
+def display_nsys_sqlite_in_notebook(nsys_sqlite: sqlite3.Connection, title="Nsight Systems", filename="nsys.json") -> None:
+    nsys_json = convert_nsys_sqlite_to_json(nsys_sqlite)
+
+    display_nsys_json_in_notebook(nsys_json, title, filename)
+
+
+def display_nsys_json_in_notebook(nsys_json, title="Nsight Systems", filename="nsys.json") -> None:
+    try:
+        from IPython.display import HTML, display
+    except ImportError:
+        print("Error: ipywidgets and IPython are required for this function.")
+        print("Install with: pip install ipywidgets")
+        return
+
+    b64 = base64.b64encode(nsys_json).decode("ascii")
+
+    html = f"""
+    <button id="open-perfetto" style="padding:8px 12px;font-size:14px">Open in Perfetto</button>
+    <script>
+    (() => {{
+    const TITLE     = {title!r};
+    const FILE_NAME = {filename!r};
+    const B64       = {b64!r};
+
+    function b64ToArrayBuffer(b64) {{
+        const binary = atob(b64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; ++i) bytes[i] = binary.charCodeAt(i);
+        return bytes.buffer;
+    }}
+
+    async function openPerfetto() {{
+        const ui = window.open('https://ui.perfetto.dev/#!/');
+        if (!ui) {{ alert('Popup blocked. Allow popups for this page and click again.'); return; }}
+
+        // Perfetto readiness handshake: PING until we receive PONG
+        await new Promise((resolve, reject) => {{
+        const onMsg = (e) => {{
+            if (e.source === ui && e.data === 'PONG') {{
+            window.removeEventListener('message', onMsg);
+            clearInterval(pinger);
+            resolve();
+            }}
+        }};
+        window.addEventListener('message', onMsg);
+        const pinger = setInterval(() => {{ try {{ ui.postMessage('PING', '*'); }} catch (_e) {{}} }}, 250);
+        setTimeout(() => {{ clearInterval(pinger); window.removeEventListener('message', onMsg); reject(); }}, 20000);
+        }}).catch(() => {{ alert('Perfetto UI did not respond. Try again.'); return; }});
+
+        ui.postMessage({{
+        perfetto: {{
+            buffer: b64ToArrayBuffer(B64),
+            title: TITLE,
+            fileName: FILE_NAME
+            // No URL here; the Share button won't generate a link without one.
+        }}
+        }}, '*');
+    }}
+
+    document.getElementById('open-perfetto').addEventListener('click', openPerfetto);
+    }})();
+    </script>
+    """
+    display(HTML(html))

@@ -116,7 +116,7 @@ def format_ncu_rule_type(rule_type: str) -> str:
         return f"**{rule_type}**"
 
 
-def parse_ncu_csv_data(
+def parse_ncu_csv(
     ncu_csv: Iterable[str],
 ) -> Dict[str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]], List[Dict[str, str]]]]]]:
     """Parse Nsight Compute CSV and return structured data.
@@ -171,7 +171,7 @@ def add_per_section_ncu_markdown(
     """Add per-section Markdown to the parsed Nsight Compute data.
 
     Args:
-        ncu_dict (dict): Data structure from parse_ncu_csv_data()
+        ncu_dict (dict): Data structure from parse_ncu_csv()
                          Format: {kernel_name: {section_name: {'Metrics': {}, 'Rules': []}}}
 
     Returns:
@@ -224,7 +224,7 @@ def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
     Returns:
         str: Single markdown string ready for printing
     """
-    nested_markdown = add_per_section_ncu_markdown(parse_ncu_csv_data(ncu_csv))
+    nested_markdown = add_per_section_ncu_markdown(parse_ncu_csv(ncu_csv))
     markdown_lines = []
 
     for kernel_name, sections in nested_markdown.items():

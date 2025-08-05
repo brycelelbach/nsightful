@@ -1,5 +1,5 @@
 """
-Tests for nsightful command line interface functionality.
+Tests for Nsightful command line interface functionality.
 """
 
 import sys
@@ -22,8 +22,9 @@ class TestCliMain:
 
         assert excinfo.value.code == 0
         captured = capsys.readouterr()
-        assert "Convert NVIDIA Nsight Compute (NCU) CSV output to Markdown" in captured.out
-        assert "nsightful results.csv" in captured.out
+        assert "Convert Nsight Compute (NCU) CSV output to Markdown" in captured.out
+        assert "ncu" in captured.out
+        assert "nsys" in captured.out
 
     def test_missing_file_argument(self, capsys):
         """Test error when no CSV file argument is provided."""
@@ -31,16 +32,16 @@ class TestCliMain:
             with patch.object(sys, "argv", ["nsightful"]):
                 main()
 
-        assert excinfo.value.code == 2  # argparse error code
+        assert excinfo.value.code == 1  # No subcommand provided
         captured = capsys.readouterr()
-        assert "error" in captured.err.lower()
+        assert "usage:" in captured.out.lower()
 
     def test_nonexistent_file(self, capsys):
         """Test error handling for nonexistent input file."""
         nonexistent_file = "nonexistent_file.csv"
 
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, "argv", ["nsightful", nonexistent_file]):
+            with patch.object(sys, "argv", ["nsightful", "ncu", nonexistent_file]):
                 main()
 
         assert excinfo.value.code == 1
@@ -53,7 +54,7 @@ class TestCliMain:
         test_dir.mkdir()
 
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, "argv", ["nsightful", str(test_dir)]):
+            with patch.object(sys, "argv", ["nsightful", "ncu", str(test_dir)]):
                 main()
 
         assert excinfo.value.code == 1
@@ -62,7 +63,7 @@ class TestCliMain:
 
     def test_successful_conversion_to_stdout(self, capsys, sample_csv_file):
         """Test successful conversion with output to stdout."""
-        with patch.object(sys, "argv", ["nsightful", str(sample_csv_file)]):
+        with patch.object(sys, "argv", ["nsightful", "ncu", str(sample_csv_file)]):
             main()
 
         captured = capsys.readouterr()
@@ -79,7 +80,7 @@ class TestCliMain:
         output_file = tmp_path / "output.md"
 
         with patch.object(
-            sys, "argv", ["nsightful", str(sample_csv_file), "-o", str(output_file)]
+            sys, "argv", ["nsightful", "ncu", str(sample_csv_file), "-o", str(output_file)]
         ):
             main()
 
@@ -101,7 +102,7 @@ class TestCliMain:
         output_file = tmp_path / "output.md"
 
         with patch.object(
-            sys, "argv", ["nsightful", str(sample_csv_file), "--output", str(output_file)]
+            sys, "argv", ["nsightful", "ncu", str(sample_csv_file), "--output", str(output_file)]
         ):
             main()
 
@@ -122,7 +123,7 @@ class TestCliMain:
         # Mock permission error
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             with pytest.raises(SystemExit) as excinfo:
-                with patch.object(sys, "argv", ["nsightful", str(test_file)]):
+                with patch.object(sys, "argv", ["nsightful", "ncu", str(test_file)]):
                     main()
 
         assert excinfo.value.code == 1
@@ -142,7 +143,7 @@ class TestCliMain:
         with patch("builtins.open", side_effect=mock_open_func):
             with pytest.raises(SystemExit) as excinfo:
                 with patch.object(
-                    sys, "argv", ["nsightful", str(sample_csv_file), "-o", str(output_file)]
+                    sys, "argv", ["nsightful", "ncu", str(sample_csv_file), "-o", str(output_file)]
                 ):
                     main()
 
@@ -160,7 +161,7 @@ class TestCliMain:
         malformed_file.write_text("This is not valid CSV data\nNo headers here")
 
         with pytest.raises(SystemExit) as excinfo:
-            with patch.object(sys, "argv", ["nsightful", str(malformed_file)]):
+            with patch.object(sys, "argv", ["nsightful", "ncu", str(malformed_file)]):
                 main()
 
         assert excinfo.value.code == 1
@@ -176,7 +177,7 @@ class TestCliMain:
         utf8_file = tmp_path / "utf8_test.csv"
         utf8_file.write_text(utf8_content, encoding="utf-8")
 
-        with patch.object(sys, "argv", ["nsightful", str(utf8_file)]):
+        with patch.object(sys, "argv", ["nsightful", "ncu", str(utf8_file)]):
             main()
 
         captured = capsys.readouterr()
@@ -186,7 +187,7 @@ class TestCliMain:
 
     def test_real_test_data_conversion(self, capsys, real_test_csv_file):
         """Test conversion of real test data file."""
-        with patch.object(sys, "argv", ["nsightful", str(real_test_csv_file)]):
+        with patch.object(sys, "argv", ["nsightful", "ncu", str(real_test_csv_file)]):
             main()
 
         captured = capsys.readouterr()
@@ -206,7 +207,7 @@ class TestCliMain:
 
         # This might raise an exception or produce empty output
         # depending on how csv.DictReader handles empty files
-        with patch.object(sys, "argv", ["nsightful", str(empty_file)]):
+        with patch.object(sys, "argv", ["nsightful", "ncu", str(empty_file)]):
             try:
                 main()
                 captured = capsys.readouterr()
@@ -223,9 +224,9 @@ class TestCliArgumentParsing:
     """Test argument parsing specifically."""
 
     def test_csv_file_argument_required(self):
-        """Test that CSV file argument is required."""
+        """Test that CSV file argument is required for ncu subcommand."""
         with pytest.raises(SystemExit):
-            with patch.object(sys, "argv", ["nsightful"]):
+            with patch.object(sys, "argv", ["nsightful", "ncu"]):
                 main()
 
     def test_output_option_parsing(self, sample_csv_file, tmp_path):
@@ -234,7 +235,7 @@ class TestCliArgumentParsing:
 
         # Test short form
         with patch.object(
-            sys, "argv", ["nsightful", str(sample_csv_file), "-o", str(output_file)]
+            sys, "argv", ["nsightful", "ncu", str(sample_csv_file), "-o", str(output_file)]
         ):
             main()
         assert output_file.exists()
@@ -244,7 +245,7 @@ class TestCliArgumentParsing:
 
         # Test long form
         with patch.object(
-            sys, "argv", ["nsightful", str(sample_csv_file), "--output", str(output_file)]
+            sys, "argv", ["nsightful", "ncu", str(sample_csv_file), "--output", str(output_file)]
         ):
             main()
         assert output_file.exists()
@@ -252,7 +253,7 @@ class TestCliArgumentParsing:
     def test_help_message_content(self, capsys):
         """Test that help message contains expected information."""
         with pytest.raises(SystemExit):
-            with patch.object(sys, "argv", ["nsightful", "--help"]):
+            with patch.object(sys, "argv", ["nsightful", "ncu", "--help"]):
                 main()
 
         captured = capsys.readouterr()
@@ -266,8 +267,8 @@ class TestCliArgumentParsing:
         assert "-o" in help_text or "--output" in help_text
 
         # Should contain examples
-        assert "nsightful results.csv" in help_text
-        assert "nsightful results.csv -o results.md" in help_text
+        assert "nsightful ncu results.csv" in help_text
+        assert "nsightful ncu results.csv -o results.md" in help_text
 
         # Should contain NCU command examples
         assert "ncu --set full" in help_text
