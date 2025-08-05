@@ -6,13 +6,13 @@ import io
 import pytest
 from typing import Dict, Any
 
-from nsightful.core import (
-    get_sorted_sections,
+from nsightful.ncu import (
+    get_sorted_ncu_sections,
     extract_kernel_name,
     format_numeric_value,
-    format_rule_type,
+    format_ncu_rule_type,
     parse_ncu_csv_data,
-    add_per_section_markdown,
+    add_per_section_ncu_markdown,
     convert_ncu_csv_to_flat_markdown,
 )
 
@@ -29,7 +29,7 @@ class TestGetSortedSections:
             "Scheduler": {"data": "sched"},
         }
 
-        sorted_sections = get_sorted_sections(sections)
+        sorted_sections = get_sorted_ncu_sections(sections)
         section_names = [name for name, _ in sorted_sections]
 
         # Speed Of Light should come first, followed by Memory Workload, then Compute Workload
@@ -44,7 +44,7 @@ class TestGetSortedSections:
             "Another Custom": {"data": "custom2"},
         }
 
-        sorted_sections = get_sorted_sections(sections)
+        sorted_sections = get_sorted_ncu_sections(sections)
         section_names = [name for name, _ in sorted_sections]
 
         # Speed Of Light should come first
@@ -55,7 +55,7 @@ class TestGetSortedSections:
 
     def test_sort_empty_sections(self):
         """Test sorting with empty sections dictionary."""
-        assert get_sorted_sections({}) == []
+        assert get_sorted_ncu_sections({}) == []
 
 
 class TestExtractKernelName:
@@ -130,24 +130,24 @@ class TestFormatRuleType:
 
     def test_format_optimization_rule(self):
         """Test formatting of optimization rules."""
-        assert format_rule_type("OPT") == "🔧 **OPTIMIZATION**"
+        assert format_ncu_rule_type("OPT") == "🔧 **OPTIMIZATION**"
 
     def test_format_warning_rule(self):
         """Test formatting of warning rules."""
-        assert format_rule_type("WRN") == "⚠️ **WARNING**"
+        assert format_ncu_rule_type("WRN") == "⚠️ **WARNING**"
 
     def test_format_info_rule(self):
         """Test formatting of info rules."""
-        assert format_rule_type("INF") == "ℹ️ **INFO**"
+        assert format_ncu_rule_type("INF") == "ℹ️ **INFO**"
 
     def test_format_unknown_rule(self):
         """Test formatting of unknown rule types."""
-        assert format_rule_type("UNKNOWN") == "**UNKNOWN**"
-        assert format_rule_type("CUSTOM") == "**CUSTOM**"
+        assert format_ncu_rule_type("UNKNOWN") == "**UNKNOWN**"
+        assert format_ncu_rule_type("CUSTOM") == "**CUSTOM**"
 
     def test_format_empty_rule(self):
         """Test formatting of empty rule types."""
-        assert format_rule_type("") == "****"
+        assert format_ncu_rule_type("") == "****"
 
 
 class TestParseNcuCsvData:
@@ -221,7 +221,7 @@ class TestAddPerSectionMarkdown:
     def test_add_markdown_to_parsed_data(self, sample_csv_io):
         """Test adding markdown to parsed data."""
         parsed_data = parse_ncu_csv_data(sample_csv_io)
-        result = add_per_section_markdown(parsed_data)
+        result = add_per_section_ncu_markdown(parsed_data)
 
         # Check that markdown was added
         sol_section = result["simple_kernel"]["Speed Of Light"]
@@ -239,7 +239,7 @@ class TestAddPerSectionMarkdown:
         """Test adding markdown to empty section."""
         test_data = {"test_kernel": {"Empty Section": {"Metrics": {}, "Rules": []}}}
 
-        result = add_per_section_markdown(test_data)
+        result = add_per_section_ncu_markdown(test_data)
         markdown = result["test_kernel"]["Empty Section"]["Markdown"]
 
         assert "## Empty Section" in markdown
@@ -266,7 +266,7 @@ class TestAddPerSectionMarkdown:
             }
         }
 
-        result = add_per_section_markdown(test_data)
+        result = add_per_section_ncu_markdown(test_data)
         markdown = result["test_kernel"]["Test Section"]["Markdown"]
 
         assert "⚠️ **WARNING**: Test warning message" in markdown

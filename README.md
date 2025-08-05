@@ -59,8 +59,8 @@ with open('myreport.csv', 'r') as f:
 
 # Parse structured data for custom processing
 with open('myreport.csv', 'r') as f:
-    ncu_data = nsightful.parse_ncu_csv_data(f)
-    # ncu_data is a nested dictionary with kernel -> section -> metrics/rules
+    ncu_dict = nsightful.parse_ncu_csv_data(f)
+    # ncu_dict is a nested dictionary with kernel -> section -> metrics/rules
 ```
 
 #### NCU Jupyter Notebook Widget
@@ -83,7 +83,7 @@ profile and collect a report, then you can display it with nsightful:
 import nsightful
 
 with open('myreport.csv', 'r') as f:
-    nsightful.display_ncu_data_in_notebook(f)
+    nsightful.display_ncu_report_in_notebook(f)
 ```
 
 If you want to profile cells with nsightful without the Nsight JupyterLab extension, you can use
@@ -125,7 +125,7 @@ copy_blocked[blocks, threads_per_block](src, dst, items_per_thread)
 import nsightful
 
 copy_blocked_csv = !ncu --import copy_blocked.ncu-rep --csv
-nsightful.display_ncu_data_in_notebook(copy_blocked_csv)
+nsightful.display_ncu_report_in_notebook(copy_blocked_csv)
 ```
 
 ## Example Output

@@ -1,5 +1,5 @@
 """
-Core functionality for parsing and converting Nsight Compute CSV data to Markdown.
+Core functionality for parsing and converting Nsight Compute reports.
 """
 
 import csv
@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple, Any, Iterable, Union
 # Mapping from raw NCU CSV section names to canonical user-facing names.
 # Order matters: canonical names will appear in output in the order they appear here.
 # All entries for a canonical name must be grouped together.
-SECTION_MAPPINGS = {
+NCU_SECTION_MAPPINGS = {
     # Speed Of Light variations (canonical: Speed Of Light)
     "GPU Speed Of Light Throughput": "Speed Of Light",
     "SpeedOfLight": "Speed Of Light",
@@ -35,30 +35,28 @@ SECTION_MAPPINGS = {
     "Launch Statistics": "Launch",
     "PM Sampling": "PM Sampling",
     "Occupancy": "Occupancy",
-    # Source Counters variations (canonical: Branching)
-    # The only metrics I've seen from this section are for branching or warp stalls;
-    # "source counters" seems confusing.
-    "Source Counters": "Branching",
-    "SourceCounters": "Branching",
+    # Source Counters variations (canonical: Source Counter)
+    "Source Counters": "Source Counters",
+    "SourceCounters": "Source Counters",
 }
 
 
-def get_sorted_sections(sections: Dict[str, Any]) -> List[Tuple[str, Any]]:
-    """Get sections sorted according to typical Nsight Compute output order.
+def get_sorted_ncu_sections(ncu_sections: Dict[str, Any]) -> List[Tuple[str, Any]]:
+    """Return the Nsight Compute sections sorted according to our canonical output order.
 
     Args:
-        sections (dict): Dictionary of section_name: section_data
+        ncu_sections (dict): Dictionary of section_name: section_data
 
     Returns:
         list: List of (section_name, section_data) tuples in sorted order
     """
-    # Get canonical section order from SECTION_MAPPINGS values.
+    # Get canonical section order from NCU_SECTION_MAPPINGS values.
     # dict.fromkeys preserves insertion order & removes duplicates; python has no unique operation.
-    section_order = list(dict.fromkeys(SECTION_MAPPINGS.values()))
+    section_order = list(dict.fromkeys(NCU_SECTION_MAPPINGS.values()))
 
     # Sort sections, putting known sections first in order, then others
     sorted_sections = []
-    remaining_sections = dict(sections)
+    remaining_sections = dict(ncu_sections)
 
     for section in section_order:
         if section in remaining_sections:
@@ -106,8 +104,8 @@ def format_numeric_value(value_str: str) -> str:
     return value_str
 
 
-def format_rule_type(rule_type: str) -> str:
-    """Format rule type with appropriate emoji and styling."""
+def format_ncu_rule_type(rule_type: str) -> str:
+    """Format Nsight Compute rule type with appropriate emoji and styling."""
     if rule_type == "OPT":
         return "🔧 **OPTIMIZATION**"
     elif rule_type == "WRN":
@@ -135,7 +133,7 @@ def parse_ncu_csv_data(
     for row in reader:
         full_kernel_name = row["Kernel Name"]
         kernel_name = extract_kernel_name(full_kernel_name)
-        section_name = SECTION_MAPPINGS.get(row["Section Name"], row["Section Name"])
+        section_name = NCU_SECTION_MAPPINGS.get(row["Section Name"], row["Section Name"])
 
         # Skip rows without section names
         if not section_name:
@@ -165,21 +163,21 @@ def parse_ncu_csv_data(
     return kernels
 
 
-def add_per_section_markdown(
-    ncu_data: Dict[
+def add_per_section_ncu_markdown(
+    ncu_dict: Dict[
         str, Dict[str, Dict[str, Union[Dict[str, Dict[str, str]], List[Dict[str, str]]]]]
     ],
 ) -> Dict[str, Dict[str, Dict[str, Any]]]:
     """Add per-section Markdown to the parsed Nsight Compute data.
 
     Args:
-        ncu_data (dict): Data structure from parse_ncu_csv_data()
+        ncu_dict (dict): Data structure from parse_ncu_csv_data()
                          Format: {kernel_name: {section_name: {'Metrics': {}, 'Rules': []}}}
 
     Returns:
         dict: {kernel_name: {section_name: {'Metrics': {}, 'Rules': [], 'Markdown': str}}}
     """
-    for kernel_name, sections in ncu_data.items():
+    for kernel_name, sections in ncu_dict.items():
         for section_name, data in sections.items():
             markdown_lines = []
 
@@ -198,7 +196,7 @@ def add_per_section_markdown(
 
             # Rules/recommendations
             for rule in data["Rules"]:
-                prefix = format_rule_type(rule["Type"])
+                prefix = format_ncu_rule_type(rule["Type"])
                 description = rule["Description"]
 
                 markdown_lines.append(f"{prefix}: {description}")
@@ -214,7 +212,7 @@ def add_per_section_markdown(
             # Add the markdown content to the existing section data
             data["Markdown"] = "\n".join(markdown_lines)
 
-    return ncu_data
+    return ncu_dict
 
 
 def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
@@ -226,7 +224,7 @@ def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
     Returns:
         str: Single markdown string ready for printing
     """
-    nested_markdown = add_per_section_markdown(parse_ncu_csv_data(ncu_csv))
+    nested_markdown = add_per_section_ncu_markdown(parse_ncu_csv_data(ncu_csv))
     markdown_lines = []
 
     for kernel_name, sections in nested_markdown.items():
@@ -238,7 +236,7 @@ def convert_ncu_csv_to_flat_markdown(ncu_csv: Iterable[str]) -> str:
             continue
 
         # Add each section's markdown in sorted order
-        for section_name, section_data in get_sorted_sections(sections):
+        for section_name, section_data in get_sorted_ncu_sections(sections):
             markdown_lines.append(section_data["Markdown"])
 
         markdown_lines.append("---\n")  # Add separator between kernels

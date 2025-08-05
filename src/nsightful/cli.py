@@ -1,9 +1,8 @@
 """
-Command-line interface for nsightful.
+Command-line interface for Nsightful.
 
-This module provides the main CLI entry point for converting Nsight Compute CSV
-output to Markdown format. It handles argument parsing, file validation, and
-output redirection.
+This module provides the main CLI entry point for converting Nsight output to other formats.
+It handles argument parsing, file validation, and output redirection.
 
 Example usage:
     nsightful results.csv                # Output to stdout
@@ -13,7 +12,7 @@ Example usage:
 import sys
 import argparse
 from pathlib import Path
-from .core import convert_ncu_csv_to_flat_markdown
+from .ncu import convert_ncu_csv_to_flat_markdown
 
 
 def main() -> None:

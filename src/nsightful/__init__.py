@@ -1,19 +1,18 @@
 """
-nsightful: Convert [NVIDIA Nsight Compute](https://developer.nvidia.com/nsight-compute) CSV
-output to Markdown that can be output to a file or displayed in a tabbed widget in Jupyter
-notebooks.
+nsightful: Convert [NVIDIA Nsight](https://developer.nvidia.com/tools-overview) reports to other
+formats and elegantly display them in Jupyter notebooks.
 """
 
-from .core import (
+from .ncu import (
     parse_ncu_csv_data,
     convert_ncu_csv_to_flat_markdown,
     extract_kernel_name,
-    get_sorted_sections,
+    get_sorted_ncu_sections,
     format_numeric_value,
-    format_rule_type,
+    format_ncu_rule_type,
 )
 
-from .notebook import display_ncu_data_in_notebook
+from .notebook import display_ncu_report_in_notebook
 
 __version__ = "0.1.0"
 __author__ = "NVIDIA Corporation"
@@ -21,9 +20,9 @@ __author__ = "NVIDIA Corporation"
 __all__ = [
     "parse_ncu_csv_data",
     "convert_ncu_csv_to_flat_markdown",
-    "display_ncu_data_in_notebook",
+    "display_ncu_report_in_notebook",
     "extract_kernel_name",
-    "get_sorted_sections",
+    "get_sorted_ncu_sections",
     "format_numeric_value",
-    "format_rule_type",
+    "format_ncu_rule_type",
 ]

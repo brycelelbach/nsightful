@@ -3,15 +3,15 @@ Jupyter notebook display functionality for Nsight Compute data.
 """
 
 from typing import Iterable
-from .core import (
+from .ncu import (
     parse_ncu_csv_data,
-    add_per_section_markdown,
-    get_sorted_sections,
-    format_rule_type,
+    add_per_section_ncu_markdown,
+    get_sorted_ncu_sections,
+    format_ncu_rule_type,
 )
 
 
-def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
+def display_ncu_report_in_notebook(ncu_csv: Iterable[str]) -> None:
     """Display NCU data in a Jupyter notebook with tabs and a kernel selector.
 
     Args:
@@ -25,7 +25,7 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
         print("Install with: pip install ipywidgets")
         return
 
-    ncu_data = add_per_section_markdown(parse_ncu_csv_data(ncu_csv))
+    ncu_dict = add_per_section_ncu_markdown(parse_ncu_csv_data(ncu_csv))
 
     # Disable nested scrolling in Google Colab because it scrolls past the tabs and selector.
     try:
@@ -82,7 +82,7 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
     )
 
     # Get list of kernel names
-    kernel_names = list(ncu_data.keys())
+    kernel_names = list(ncu_dict.keys())
 
     # Create dropdown for kernel selection
     kernel_dropdown = widgets.Dropdown(
@@ -103,11 +103,11 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
         with output_area:
             clear_output(wait=True)
 
-            if selected_kernel not in ncu_data:
+            if selected_kernel not in ncu_dict:
                 print(f"No data found for kernel: {selected_kernel}")
                 return
 
-            sections = ncu_data[selected_kernel]
+            sections = ncu_dict[selected_kernel]
 
             if not sections:
                 print(f"No sections found for kernel: {selected_kernel}")
@@ -119,7 +119,7 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
 
             # Extract all rules from all sections in sorted order, grouped by section
             rules_found = False
-            for section_name, section_data in get_sorted_sections(sections):
+            for section_name, section_data in get_sorted_ncu_sections(sections):
                 if section_data["Rules"]:  # Only add section header if there are rules
                     rules_found = True
 
@@ -129,7 +129,7 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
                     # Add all rules from this section
                     for rule in section_data["Rules"]:
                         # Format rule type with emoji
-                        prefix = format_rule_type(rule["Type"])
+                        prefix = format_ncu_rule_type(rule["Type"])
 
                         # Add rule description
                         summary_content.append(f"{prefix}: {rule['Description']}")
@@ -151,7 +151,7 @@ def display_ncu_data_in_notebook(ncu_csv: Iterable[str]) -> None:
                     display(Markdown("## Summary\n\nNo rules found in any section."))
 
             # Create tabs for each section in sorted order
-            sorted_sections = get_sorted_sections(sections)
+            sorted_sections = get_sorted_ncu_sections(sections)
             tab_children = [summary_output]  # Summary tab first
             tab_titles = ["Summary"]  # Summary tab title first
 

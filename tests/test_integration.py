@@ -18,11 +18,11 @@ class TestPackageIntegration:
         # Test that main functions are available
         assert hasattr(nsightful, "parse_ncu_csv_data")
         assert hasattr(nsightful, "convert_ncu_csv_to_flat_markdown")
-        assert hasattr(nsightful, "display_ncu_data_in_notebook")
+        assert hasattr(nsightful, "display_ncu_report_in_notebook")
 
         # Test that utility functions are available
         assert hasattr(nsightful, "extract_kernel_name")
-        assert hasattr(nsightful, "format_rule_type")
+        assert hasattr(nsightful, "format_ncu_rule_type")
 
     def test_cli_entry_point(self, real_test_csv_file):
         """Test that the CLI entry point works."""

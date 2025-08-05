@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nsightful"
 version = "0.1.0"
-description = "Convert NVIDIA Nsight Compute CSV output to Markdown that can be output to a file or displayed in a tabbed widget in Jupyter notebooks."
+description = "Convert NVIDIA Nsight reports to other formats and elegantly display them in Jupyter notebooks."
 readme = "README.md"
 license = {text = "Apache License 2.0 with LLVM exceptions"}
 authors = [
