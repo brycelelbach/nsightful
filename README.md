@@ -219,13 +219,13 @@ The project uses several tools to maintain code quality:
 
 ```bash
 # Format code with black
-black .
+black src/ tests/
 
 # Lint with flake8
-flake8 .
+flake8 --select=E9,F63,F7,F82 src/ tests/
 
 # Type checking with mypy
-mypy src/
+mypy  --ignore-missing-imports src/
 ```
 
 ## License

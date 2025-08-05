@@ -10,6 +10,7 @@ import argparse
 import json
 import sqlite3
 from pathlib import Path
+from typing import Any
 from .ncu import convert_ncu_csv_to_flat_markdown
 from .nsys import convert_nsys_sqlite_to_json
 
@@ -21,12 +22,12 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # NCU subcommand
     ncu_parser = subparsers.add_parser(
-        'ncu',
-        help='Convert Nsight Compute (NCU) CSV output to Markdown',
+        "ncu",
+        help="Convert Nsight Compute (NCU) CSV output to Markdown",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -43,8 +44,8 @@ Nsight Compute CSV files can be generated using:
 
     # Nsys subcommand
     nsys_parser = subparsers.add_parser(
-        'nsys',
-        help='Convert Nsight Systems sqlite output to Google Chrome Event Trace Format JSON',
+        "nsys",
+        help="Convert Nsight Systems sqlite output to Google Chrome Event Trace Format JSON",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -56,21 +57,42 @@ Nsight Systems files can be generated using:
   nsys export --type sqlite MYREPORT.nsys-rep
         """,
     )
-    nsys_parser.add_argument("-f", '--filename', help="Path to the input sqlite file.", required=True)
-    nsys_parser.add_argument("-o", "--output", help="Output file name, default to same as input with .json extension.")
-    nsys_parser.add_argument("-t", "--activity-type", help="Type of activities shown. Default to all.", default=None, choices=['kernel', 'nvtx', "nvtx-kernel", "cuda-api"], nargs="+")
-    nsys_parser.add_argument("--nvtx-event-prefix", help="Filter NVTX events by their names' prefix.", type=str, nargs="*")
-    nsys_parser.add_argument("--nvtx-color-scheme", help="""Color scheme for NVTX events.
+    nsys_parser.add_argument(
+        "-f", "--filename", help="Path to the input sqlite file.", required=True
+    )
+    nsys_parser.add_argument(
+        "-o", "--output", help="Output file name, default to same as input with .json extension."
+    )
+    nsys_parser.add_argument(
+        "-t",
+        "--activity-type",
+        help="Type of activities shown. Default to all.",
+        default=None,
+        choices=["kernel", "nvtx", "nvtx-kernel", "cuda-api"],
+        nargs="+",
+    )
+    nsys_parser.add_argument(
+        "--nvtx-event-prefix",
+        help="Filter NVTX events by their names' prefix.",
+        type=str,
+        nargs="*",
+    )
+    nsys_parser.add_argument(
+        "--nvtx-color-scheme",
+        help="""Color scheme for NVTX events.
                                                     Accepts a dict mapping a string to one of chrome tracing colors.
                                                     Events with names containing the string will be colored.
                                                     E.g. {"send": "thread_state_iowait", "recv": "thread_state_iowait", "compute": "thread_state_running"}
                                                     For details of the color scheme, see links in https://github.com/google/perfetto/issues/208
-                                                    """, type=json.loads, default={})
+                                                    """,
+        type=json.loads,
+        default={},
+    )
 
     return parser
 
 
-def handle_ncu_command(args) -> None:
+def handle_ncu_command(args: Any) -> None:
     """Handle the NCU subcommand."""
     csv_file = Path(args.csv_file)
 
@@ -103,7 +125,7 @@ def handle_ncu_command(args) -> None:
         sys.exit(1)
 
 
-def handle_nsys_command(args) -> None:
+def handle_nsys_command(args: Any) -> None:
     """Handle the Nsys subcommand."""
     try:
         conn = sqlite3.connect(args.filename)
@@ -113,11 +135,11 @@ def handle_nsys_command(args) -> None:
             conn,
             activities=args.activity_type,
             event_prefix=args.nvtx_event_prefix,
-            color_scheme=args.nvtx_color_scheme
+            color_scheme=args.nvtx_color_scheme,
         )
 
         if args.output:
-            with open(args.output, 'w') as f:
+            with open(args.output, "w") as f:
                 json.dump(trace_events, f)
         else:
             json.dump(trace_events, sys.stdout)
@@ -138,9 +160,9 @@ def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
 
-    if args.command == 'ncu':
+    if args.command == "ncu":
         handle_ncu_command(args)
-    elif args.command == 'nsys':
+    elif args.command == "nsys":
         handle_nsys_command(args)
     else:
         parser.print_help()

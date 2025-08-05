@@ -9,9 +9,10 @@ import json
 from pathlib import Path
 import re
 from collections import defaultdict
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 
-NSYS_PID_TO_DEVICE = None
+NSYS_PID_TO_DEVICE: Optional[Dict[int, int]] = None
+
 
 class NsysActivityType:
     KERNEL = "kernel"
@@ -19,15 +20,20 @@ class NsysActivityType:
     NVTX_KERNEL = "nvtx-kernel"
     CUDA_API = "cuda-api"
 
-def convert_nsys_time_to_chrome_trace_time(t):
+
+def convert_nsys_time_to_chrome_trace_time(t: int) -> float:
     """Take a timestamp from nsys (ns) and convert it into us (the default for chrome://tracing)."""
     # For strict correctness, divide by 1000, but this reduces accuracy.
-    return t / 1000.
+    return t / 1000.0
+
 
 # For reference of the schema, see
 # https://docs.nvidia.com/nsight-systems/UserGuide/index.html#exporter-sqlite-schema
 
-def parse_nsys_sqlite_cupti_kernel_events(conn: sqlite3.Connection, strings: dict):
+
+def parse_nsys_sqlite_cupti_kernel_events(
+    conn: sqlite3.Connection, strings: Dict[int, str]
+) -> Tuple[Dict[int, List[sqlite3.Row]], Dict[int, List[Dict[str, Any]]]]:
     """
     Copied from the docs:
     CUPTI_ACTIVITY_KIND_KERNEL
@@ -59,38 +65,48 @@ def parse_nsys_sqlite_cupti_kernel_events(conn: sqlite3.Connection, strings: dic
     graphNodeId                 INTEGER,                               -- REFERENCES CUDA_GRAPH_EVENTS(graphNodeId)
     sharedMemoryLimitConfig     INTEGER                                -- REFERENCES ENUM_CUDA_SHARED_MEM_LIMIT_CONFIG(id)
     """
-    per_device_kernel_rows = defaultdict(list)
-    per_device_kernel_events = defaultdict(list)
+    per_device_kernel_rows: Dict[int, List[sqlite3.Row]] = defaultdict(list)
+    per_device_kernel_events: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
     for row in conn.execute("SELECT * FROM CUPTI_ACTIVITY_KIND_KERNEL"):
         per_device_kernel_rows[row["deviceId"]].append(row)
         event = {
-                "name": strings[row["shortName"]],
-                "ph": "X", # Complete Event (Begin + End event)
-                "cat": "cuda",
-                "ts": convert_nsys_time_to_chrome_trace_time(row["start"]),
-                "dur": convert_nsys_time_to_chrome_trace_time(row["end"] - row["start"]),
-                "tid": "CUDA API {}".format(row["streamId"]),
-                "pid": "Device {}".format(row["deviceId"]),
-                "args": {
-                    # TODO: More
-                    },
-                }
+            "name": strings[row["shortName"]],
+            "ph": "X",  # Complete Event (Begin + End event)
+            "cat": "cuda",
+            "ts": convert_nsys_time_to_chrome_trace_time(row["start"]),
+            "dur": convert_nsys_time_to_chrome_trace_time(row["end"] - row["start"]),
+            "tid": "CUDA API {}".format(row["streamId"]),
+            "pid": "Device {}".format(row["deviceId"]),
+            "args": {
+                # TODO: More
+            },
+        }
         per_device_kernel_events[row["deviceId"]].append(event)
     return per_device_kernel_rows, per_device_kernel_events
 
-def link_nsys_pid_with_devices(conn: sqlite3.Connection):
+
+def link_nsys_pid_with_devices(conn: sqlite3.Connection) -> Dict[int, int]:
     # map each pid to a device. assumes each pid is associated with a single device
     global NSYS_PID_TO_DEVICE
     if NSYS_PID_TO_DEVICE is None:
-        pid_to_device = {}
-        for row in conn.execute("SELECT DISTINCT deviceId, globalPid / 0x1000000 % 0x1000000 AS PID FROM CUPTI_ACTIVITY_KIND_KERNEL"):
-            assert row["PID"] not in pid_to_device, \
-                f"A single PID ({row['PID']}) is associated with multiple devices ({pid_to_device[row['PID']]} and {row['deviceId']})."
+        pid_to_device: Dict[int, int] = {}
+        for row in conn.execute(
+            "SELECT DISTINCT deviceId, globalPid / 0x1000000 % 0x1000000 AS PID FROM CUPTI_ACTIVITY_KIND_KERNEL"
+        ):
+            assert (
+                row["PID"] not in pid_to_device
+            ), f"A single PID ({row['PID']}) is associated with multiple devices ({pid_to_device[row['PID']]} and {row['deviceId']})."
             pid_to_device[row["PID"]] = row["deviceId"]
         NSYS_PID_TO_DEVICE = pid_to_device
     return NSYS_PID_TO_DEVICE
 
-def parse_nsys_sqlite_nvtx_events(conn: sqlite3.Connection, strings: dict, event_prefix=None, color_scheme={}):
+
+def parse_nsys_sqlite_nvtx_events(
+    conn: sqlite3.Connection,
+    strings: Dict[int, str],
+    event_prefix: Optional[List[str]] = None,
+    color_scheme: Optional[Dict[str, str]] = None,
+) -> Tuple[Dict[int, List[sqlite3.Row]], Dict[int, List[Dict[str, Any]]]]:
     """
     Copied from the docs:
     NVTX_EVENTS
@@ -123,9 +139,11 @@ def parse_nsys_sqlite_nvtx_events(conn: sqlite3.Connection, strings: dict, event
     75 - NvtxDomainCreate
     76 - NvtxDomainDestroy
     """
+    if color_scheme is None:
+        color_scheme = {}
 
     if event_prefix is None:
-        match_text = ''
+        match_text = ""
     else:
         match_text = " AND "
         if len(event_prefix) == 1:
@@ -139,28 +157,30 @@ def parse_nsys_sqlite_nvtx_events(conn: sqlite3.Connection, strings: dict, event
                 else:
                     match_text += " OR "
 
-    per_device_nvtx_rows = defaultdict(list)
-    per_device_nvtx_events = defaultdict(list)
+    per_device_nvtx_rows: Dict[int, List[sqlite3.Row]] = defaultdict(list)
+    per_device_nvtx_events: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
     pid_to_device = link_nsys_pid_with_devices(conn)
     # eventType 59 is NvtxPushPopRange, which corresponds to torch.cuda.nvtx.range apis
-    for row in conn.execute(f"SELECT start, end, text, textID, globalTid / 0x1000000 % 0x1000000 AS PID, globalTid % 0x1000000 AS TID FROM NVTX_EVENTS WHERE NVTX_EVENTS.eventType == 59{match_text};"):
+    for row in conn.execute(
+        f"SELECT start, end, text, textID, globalTid / 0x1000000 % 0x1000000 AS PID, globalTid % 0x1000000 AS TID FROM NVTX_EVENTS WHERE NVTX_EVENTS.eventType == 59{match_text};"
+    ):
         name = strings[row["textId"]]
-        pid = row['PID']
-        tid = row['TID']
+        pid = row["PID"]
+        tid = row["TID"]
         per_device_nvtx_rows[pid_to_device[pid]].append(row)
         assert pid in pid_to_device, f"PID {pid} not found in the pid to device map."
         event = {
-                "name": name,
-                "ph": "X", # Complete Event (Begin + End event)
-                "cat": "nvtx",
-                "ts": convert_nsys_time_to_chrome_trace_time(row["start"]),
-                "dur": convert_nsys_time_to_chrome_trace_time(row["end"] - row["start"]),
-                "tid": "NVTX {}".format(tid),
-                "pid": "Host {}".format(pid_to_device[pid]),
-                "args": {
-                    # TODO: More
-                    },
-                }
+            "name": name,
+            "ph": "X",  # Complete Event (Begin + End event)
+            "cat": "nvtx",
+            "ts": convert_nsys_time_to_chrome_trace_time(row["start"]),
+            "dur": convert_nsys_time_to_chrome_trace_time(row["end"] - row["start"]),
+            "tid": "NVTX {}".format(tid),
+            "pid": "Host {}".format(pid_to_device[pid]),
+            "args": {
+                # TODO: More
+            },
+        }
         if color_scheme:
             for key, color in color_scheme.items():
                 if re.search(key, name):
@@ -169,7 +189,10 @@ def parse_nsys_sqlite_nvtx_events(conn: sqlite3.Connection, strings: dict, event
         per_device_nvtx_events[pid_to_device[pid]].append(event)
     return per_device_nvtx_rows, per_device_nvtx_events
 
-def parse_nsys_sqlite_cuda_api_events(conn: sqlite3.Connection, strings: dict):
+
+def parse_nsys_sqlite_cuda_api_events(
+    conn: sqlite3.Connection, strings: Dict[int, str]
+) -> Tuple[Dict[int, List[sqlite3.Row]], Dict[int, List[Dict[str, Any]]]]:
     """
     Copied from the docs:
     CUPTI_ACTIVITY_KIND_RUNTIME
@@ -183,31 +206,36 @@ def parse_nsys_sqlite_cuda_api_events(conn: sqlite3.Connection, strings: dict):
     callchainId                 INTEGER   REFERENCES CUDA_CALLCHAINS(id) -- ID of the attached callchain.
     """
     pid_to_devices = link_nsys_pid_with_devices(conn)
-    per_device_api_rows = defaultdict(list)
-    per_device_api_events = defaultdict(list)
+    per_device_api_rows: Dict[int, List[sqlite3.Row]] = defaultdict(list)
+    per_device_api_events: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
     # event type 0 is TRACE_PROCESS_EVENT_CUDA_RUNTIME
-    for row in conn.execute(f"SELECT start, end, globalTid / 0x1000000 % 0x1000000 AS PID, globalTid % 0x1000000 AS TID, correlationId, nameId FROM CUPTI_ACTIVITY_KIND_RUNTIME;"):
-        text = strings[row['nameId']]
-        pid = row['PID']
-        tid = row['TID']
-        correlationId = row['correlationId']
+    for row in conn.execute(
+        f"SELECT start, end, globalTid / 0x1000000 % 0x1000000 AS PID, globalTid % 0x1000000 AS TID, correlationId, nameId FROM CUPTI_ACTIVITY_KIND_RUNTIME;"
+    ):
+        text = strings[row["nameId"]]
+        pid = row["PID"]
+        tid = row["TID"]
+        correlationId = row["correlationId"]
         per_device_api_rows[pid_to_devices[pid]].append(row)
         event = {
-                "name": text,
-                "ph": "X", # Complete Event (Begin + End event)
-                "cat": "cuda_api",
-                "ts": convert_nsys_time_to_chrome_trace_time(row["start"]),
-                "dur": convert_nsys_time_to_chrome_trace_time(row["end"] - row["start"]),
-                "tid": "CUDA API {}".format(tid),
-                "pid": "Host {}".format(pid_to_devices[pid]),
-                "args": {
-                        "correlationId": correlationId,
-                    },
-                }
+            "name": text,
+            "ph": "X",  # Complete Event (Begin + End event)
+            "cat": "cuda_api",
+            "ts": convert_nsys_time_to_chrome_trace_time(row["start"]),
+            "dur": convert_nsys_time_to_chrome_trace_time(row["end"] - row["start"]),
+            "tid": "CUDA API {}".format(tid),
+            "pid": "Host {}".format(pid_to_devices[pid]),
+            "args": {
+                "correlationId": correlationId,
+            },
+        }
         per_device_api_events[pid_to_devices[pid]].append(event)
     return per_device_api_rows, per_device_api_events
 
-def find_overlapping_nvtx_intervals(nvtx_rows, cuda_api_rows):
+
+def find_overlapping_nvtx_intervals(
+    nvtx_rows: List[sqlite3.Row], cuda_api_rows: List[sqlite3.Row]
+) -> Dict[sqlite3.Row, List[sqlite3.Row]]:
     mixed_rows = []
     for nvtx_row in nvtx_rows:
         start = nvtx_row["start"]
@@ -221,7 +249,7 @@ def find_overlapping_nvtx_intervals(nvtx_rows, cuda_api_rows):
         mixed_rows.append((end, -1, "cuda_api", cuda_api_row))
     mixed_rows.sort(key=lambda x: (x[0], x[1], x[2]))
     active_intervals = []
-    result = defaultdict(list)
+    result: Dict[sqlite3.Row, List[sqlite3.Row]] = defaultdict(list)
     for _, event_type, event_origin, orig_event in mixed_rows:
         if event_type == 1:
             # start
@@ -236,12 +264,15 @@ def find_overlapping_nvtx_intervals(nvtx_rows, cuda_api_rows):
                 active_intervals.remove(orig_event)
     return result
 
-def link_nvtx_events_to_kernel_events(strings: Dict[str, str],
-                                      pid_to_device: Dict[int, int],
-                                      per_device_nvtx_rows: Dict[int, list],
-                                      per_device_cuda_api_rows: Dict[int, list],
-                                      per_device_cuda_kernel_rows: Dict[int, list],
-                                      per_device_kernel_events: Dict[int, list]):
+
+def link_nvtx_events_to_kernel_events(
+    strings: Dict[int, str],
+    pid_to_device: Dict[int, int],
+    per_device_nvtx_rows: Dict[int, List[sqlite3.Row]],
+    per_device_cuda_api_rows: Dict[int, List[sqlite3.Row]],
+    per_device_cuda_kernel_rows: Dict[int, List[sqlite3.Row]],
+    per_device_kernel_events: Dict[int, List[Dict[str, Any]]],
+) -> Dict[sqlite3.Row, Tuple[int, int]]:
     """
     Link NVTX events to cupti kernel events. This is done by first matching
     the nvtx ranges with CUDA API calls by timestamp. Then, retrieve the
@@ -249,13 +280,19 @@ def link_nvtx_events_to_kernel_events(strings: Dict[str, str],
     """
     result = {}
     for device in pid_to_device.values():
-        event_map = find_overlapping_nvtx_intervals(per_device_nvtx_rows[device], per_device_cuda_api_rows[device])
-        correlation_id_map = defaultdict(dict)
+        event_map = find_overlapping_nvtx_intervals(
+            per_device_nvtx_rows[device], per_device_cuda_api_rows[device]
+        )
+        correlation_id_map: Dict[int, Dict[str, Any]] = defaultdict(dict)
         for cuda_api_row in per_device_cuda_api_rows[device]:
             correlation_id_map[cuda_api_row["correlationId"]]["cuda_api"] = cuda_api_row
-        for kernel_row, kernel_trace_event in zip(per_device_cuda_kernel_rows[device], per_device_kernel_events[device]):
+        for kernel_row, kernel_trace_event in zip(
+            per_device_cuda_kernel_rows[device], per_device_kernel_events[device]
+        ):
             correlation_id_map[kernel_row["correlationId"]]["kernel"] = kernel_row
-            correlation_id_map[kernel_row["correlationId"]]["kernel_trace_event"] = kernel_trace_event
+            correlation_id_map[kernel_row["correlationId"]][
+                "kernel_trace_event"
+            ] = kernel_trace_event
         for nvtx_row, cuda_api_rows in event_map.items():
             kernel_start_time = None
             kernel_end_time = None
@@ -264,7 +301,9 @@ def link_nvtx_events_to_kernel_events(strings: Dict[str, str],
                     # other cuda api event, ignore
                     continue
                 kernel_row = correlation_id_map[cuda_api_row["correlationId"]]["kernel"]
-                kernel_trace_event = correlation_id_map[cuda_api_row["correlationId"]]["kernel_trace_event"]
+                kernel_trace_event = correlation_id_map[cuda_api_row["correlationId"]][
+                    "kernel_trace_event"
+                ]
                 if "NVTXRegions" not in kernel_trace_event["args"]:
                     kernel_trace_event["args"]["NVTXRegions"] = []
                 kernel_trace_event["args"]["NVTXRegions"].append(nvtx_row["text"])
@@ -276,18 +315,45 @@ def link_nvtx_events_to_kernel_events(strings: Dict[str, str],
                 result[nvtx_row] = (kernel_start_time, kernel_end_time)
     return result
 
-def parse_nsys_sqlite(conn: sqlite3.Connection, strings: dict, activities=None, event_prefix=None, color_scheme={}):
+
+def parse_nsys_sqlite(
+    conn: sqlite3.Connection,
+    strings: Dict[int, str],
+    activities: Optional[List[str]] = None,
+    event_prefix: Optional[List[str]] = None,
+    color_scheme: Optional[Dict[str, str]] = None,
+) -> List[Dict[str, Any]]:
+    if color_scheme is None:
+        color_scheme = {}
     if activities is None:
-        activities = [NsysActivityType.KERNEL, NsysActivityType.NVTX_CPU, NsysActivityType.NVTX_KERNEL, NsysActivityType.CUDA_API]
+        activities = [
+            NsysActivityType.KERNEL,
+            NsysActivityType.NVTX_CPU,
+            NsysActivityType.NVTX_KERNEL,
+            NsysActivityType.CUDA_API,
+        ]
     if NsysActivityType.KERNEL in activities or NsysActivityType.NVTX_KERNEL in activities:
-        per_device_kernel_rows, per_device_kernel_events = parse_nsys_sqlite_cupti_kernel_events(conn, strings)
+        per_device_kernel_rows, per_device_kernel_events = parse_nsys_sqlite_cupti_kernel_events(
+            conn, strings
+        )
     if NsysActivityType.NVTX_CPU in activities or NsysActivityType.NVTX_KERNEL in activities:
-        per_device_nvtx_rows, per_device_nvtx_events = parse_nsys_sqlite_nvtx_events(conn, strings, event_prefix=event_prefix, color_scheme=color_scheme)
+        per_device_nvtx_rows, per_device_nvtx_events = parse_nsys_sqlite_nvtx_events(
+            conn, strings, event_prefix=event_prefix, color_scheme=color_scheme
+        )
     if NsysActivityType.CUDA_API in activities or NsysActivityType.NVTX_KERNEL in activities:
-        per_device_cuda_api_rows, per_device_cuda_api_events = parse_nsys_sqlite_cuda_api_events(conn, strings)
+        per_device_cuda_api_rows, per_device_cuda_api_events = parse_nsys_sqlite_cuda_api_events(
+            conn, strings
+        )
     if NsysActivityType.NVTX_KERNEL in activities:
         pid_to_device = link_nsys_pid_with_devices(conn)
-        nvtx_kernel_event_map = link_nvtx_events_to_kernel_events(strings, pid_to_device, per_device_nvtx_rows, per_device_cuda_api_rows, per_device_kernel_rows, per_device_kernel_events)
+        nvtx_kernel_event_map = link_nvtx_events_to_kernel_events(
+            strings,
+            pid_to_device,
+            per_device_nvtx_rows,
+            per_device_cuda_api_rows,
+            per_device_kernel_rows,
+            per_device_kernel_events,
+        )
     trace_events = []
     if NsysActivityType.KERNEL in activities:
         for k, v in per_device_kernel_events.items():
@@ -300,9 +366,9 @@ def parse_nsys_sqlite(conn: sqlite3.Connection, strings: dict, activities=None, 
             trace_events.extend(v)
     if NsysActivityType.NVTX_KERNEL in activities:
         for nvtx_event, (kernel_start_time, kernel_end_time) in nvtx_kernel_event_map.items():
-            event = {
+            event: Dict[str, Any] = {
                 "name": strings.get(nvtx_event["textId"], nvtx_event["text"] or ""),
-                "ph": "X", # Complete Event (Begin + End event)
+                "ph": "X",  # Complete Event (Begin + End event)
                 "cat": "nvtx-kernel",
                 "ts": convert_nsys_time_to_chrome_trace_time(kernel_start_time),
                 "dur": convert_nsys_time_to_chrome_trace_time(kernel_end_time - kernel_start_time),
@@ -310,8 +376,8 @@ def parse_nsys_sqlite(conn: sqlite3.Connection, strings: dict, activities=None, 
                 "pid": "Device {}".format(pid_to_device[nvtx_event["pid"]]),
                 "args": {
                     # TODO: More
-                    },
-                }
+                },
+            }
             trace_events.append(event)
     return trace_events
 
@@ -320,7 +386,7 @@ def convert_nsys_sqlite_to_json(
     conn: sqlite3.Connection,
     activities: Optional[List[str]] = None,
     event_prefix: Optional[List[str]] = None,
-    color_scheme: Optional[Dict[str, str]] = None
+    color_scheme: Optional[Dict[str, str]] = None,
 ) -> List[Dict[str, Any]]:
     """Convert Nsight Systems sqlite database to Chrome Event Trace Format JSON.
 
@@ -337,17 +403,13 @@ def convert_nsys_sqlite_to_json(
         color_scheme = {}
 
     # Extract string mappings from database
-    strings = {}
+    strings: Dict[int, str] = {}
     for r in conn.execute("SELECT id, value FROM StringIds"):
         strings[r["id"]] = r["value"]
 
     # Parse all events using existing logic
     trace_events = parse_nsys_sqlite(
-        conn,
-        strings,
-        activities=activities,
-        event_prefix=event_prefix,
-        color_scheme=color_scheme
+        conn, strings, activities=activities, event_prefix=event_prefix, color_scheme=color_scheme
     )
 
     # Sort timelines by pid and tid for consistent output

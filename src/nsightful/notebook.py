@@ -5,7 +5,8 @@ Jupyter notebook display functionality for Nsight Compute data.
 import base64
 import sqlite3
 import csv
-from typing import Iterable
+import json
+from typing import Iterable, Dict, Any, Optional, List
 from .ncu import (
     parse_ncu_csv,
     add_per_section_ncu_markdown,
@@ -17,8 +18,7 @@ from .nsys import convert_nsys_sqlite_to_json
 
 def display_ncu_csv_file_in_notebook(ncu_file: str) -> None:
     with open(ncu_file, "r") as f:
-        ncu_csv = csv.DictReader(f)
-        display_ncu_csv_in_notebook(ncu_csv)
+        display_ncu_csv_in_notebook(f)
 
 
 def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
@@ -106,7 +106,7 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
     # Create output widget for displaying tabs
     output_area = widgets.Output()
 
-    def update_tabs(change):
+    def update_tabs(change: Dict[str, Any]) -> None:
         """Update the tabs when kernel selection changes."""
         selected_kernel = change["new"]
 
@@ -137,20 +137,22 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
                     summary_content.append(f"### {section_name}\n")
 
                     # Add all rules from this section
-                    for rule in section_data["Rules"]:
-                        # Format rule type with emoji
-                        prefix = format_ncu_rule_type(rule["Type"])
+                    rules_data = section_data["Rules"]
+                    if isinstance(rules_data, list):
+                        for rule in rules_data:
+                            # Format rule type with emoji
+                            prefix = format_ncu_rule_type(rule["Type"])
 
-                        # Add rule description
-                        summary_content.append(f"{prefix}: {rule['Description']}")
+                            # Add rule description
+                            summary_content.append(f"{prefix}: {rule['Description']}")
 
-                        # Add speedup information if available
-                        if rule["Speedup"] and rule["Speedup_type"]:
-                            summary_content.append(
-                                f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*"
-                            )
+                            # Add speedup information if available
+                            if rule["Speedup"] and rule["Speedup_type"]:
+                                summary_content.append(
+                                    f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*"
+                                )
 
-                        summary_content.append("")  # Add blank line after each rule
+                            summary_content.append("")  # Add blank line after each rule
 
             # Create summary tab
             summary_output = widgets.Output()
@@ -201,7 +203,9 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
     update_tabs({"new": kernel_dropdown.value})
 
 
-def display_nsys_sqlite_file_in_notebook(nsys_file: str, title="Nsight Systems", filename="nsys.json") -> None:
+def display_nsys_sqlite_file_in_notebook(
+    nsys_file: str, title: str = "Nsight Systems", filename: str = "nsys.json"
+) -> None:
     conn = sqlite3.connect(nsys_file)
     conn.row_factory = sqlite3.Row
 
@@ -210,13 +214,17 @@ def display_nsys_sqlite_file_in_notebook(nsys_file: str, title="Nsight Systems",
     display_nsys_json_in_notebook(nsys_json, title, filename)
 
 
-def display_nsys_sqlite_in_notebook(nsys_sqlite: sqlite3.Connection, title="Nsight Systems", filename="nsys.json") -> None:
+def display_nsys_sqlite_in_notebook(
+    nsys_sqlite: sqlite3.Connection, title: str = "Nsight Systems", filename: str = "nsys.json"
+) -> None:
     nsys_json = convert_nsys_sqlite_to_json(nsys_sqlite)
 
     display_nsys_json_in_notebook(nsys_json, title, filename)
 
 
-def display_nsys_json_in_notebook(nsys_json, title="Nsight Systems", filename="nsys.json") -> None:
+def display_nsys_json_in_notebook(
+    nsys_json: List[Dict[str, Any]], title: str = "Nsight Systems", filename: str = "nsys.json"
+) -> None:
     try:
         from IPython.display import HTML, display
     except ImportError:
@@ -224,7 +232,10 @@ def display_nsys_json_in_notebook(nsys_json, title="Nsight Systems", filename="n
         print("Install with: pip install ipywidgets")
         return
 
-    b64 = base64.b64encode(nsys_json).decode("ascii")
+    # Convert the list to JSON string and then to bytes for base64 encoding
+    json_str = json.dumps(nsys_json)
+    json_bytes = json_str.encode("utf-8")
+    b64 = base64.b64encode(json_bytes).decode("ascii")
 
     html = f"""
     <button id="open-perfetto" style="padding:8px 12px;font-size:14px">Open in Perfetto</button>
