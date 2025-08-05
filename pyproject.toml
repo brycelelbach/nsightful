@@ -7,7 +7,7 @@ name = "nsightful"
 version = "0.1.0"
 description = "Convert NVIDIA Nsight reports to other formats and elegantly display them in Jupyter notebooks."
 readme = "README.md"
-license = {text = "Apache License 2.0 with LLVM exceptions"}
+license = {text = "BSD-3-Clause License"}
 authors = [
     {name = "NVIDIA Corporation"}
 ]
