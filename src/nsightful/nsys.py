@@ -11,8 +11,6 @@ import re
 from collections import defaultdict
 from typing import Optional, List, Dict, Any, Tuple
 
-NSYS_PID_TO_DEVICE: Optional[Dict[int, int]] = None
-
 
 class NsysActivityType:
     KERNEL = "kernel"
@@ -87,18 +85,15 @@ def parse_nsys_sqlite_cupti_kernel_events(
 
 def link_nsys_pid_with_devices(conn: sqlite3.Connection) -> Dict[int, int]:
     # map each pid to a device. assumes each pid is associated with a single device
-    global NSYS_PID_TO_DEVICE
-    if NSYS_PID_TO_DEVICE is None:
-        pid_to_device: Dict[int, int] = {}
-        for row in conn.execute(
-            "SELECT DISTINCT deviceId, globalPid / 0x1000000 % 0x1000000 AS PID FROM CUPTI_ACTIVITY_KIND_KERNEL"
-        ):
-            assert (
-                row["PID"] not in pid_to_device
-            ), f"A single PID ({row['PID']}) is associated with multiple devices ({pid_to_device[row['PID']]} and {row['deviceId']})."
-            pid_to_device[row["PID"]] = row["deviceId"]
-        NSYS_PID_TO_DEVICE = pid_to_device
-    return NSYS_PID_TO_DEVICE
+    pid_to_device: Dict[int, int] = {}
+    for row in conn.execute(
+        "SELECT DISTINCT deviceId, globalPid / 0x1000000 % 0x1000000 AS PID FROM CUPTI_ACTIVITY_KIND_KERNEL"
+    ):
+        assert (
+            row["PID"] not in pid_to_device
+        ), f"A single PID ({row['PID']}) is associated with multiple devices ({pid_to_device[row['PID']]} and {row['deviceId']})."
+        pid_to_device[row["PID"]] = row["deviceId"]
+    return pid_to_device
 
 
 def parse_nsys_sqlite_nvtx_events(
