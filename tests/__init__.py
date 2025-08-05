@@ -1,1 +1,1 @@
-"""Test package for ncu2markdown."""
+"""Test package for nsightful."""

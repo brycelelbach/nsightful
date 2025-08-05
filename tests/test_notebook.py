@@ -1,12 +1,12 @@
 """
-Tests for ncu2markdown Jupyter notebook functionality.
+Tests for nsightful Jupyter notebook functionality.
 """
 
 import io
 from unittest.mock import Mock, patch, MagicMock
 import pytest
 
-from ncu2markdown.notebook import display_ncu_data_in_notebook
+from nsightful.notebook import display_ncu_data_in_notebook
 
 
 class TestDisplayNcuDataInNotebook:

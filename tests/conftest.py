@@ -1,5 +1,5 @@
 """
-Test configuration and fixtures for ncu2markdown.
+Test configuration and fixtures for nsightful.
 """
 
 import io

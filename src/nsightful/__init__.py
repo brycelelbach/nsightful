@@ -1,6 +1,7 @@
 """
-ncu2markdown: Convert [NVIDIA Nsight Compute](https://developer.nvidia.com/nsight-compute) CSV
-output to Markdown that can be output to a file or displayed in a tabbed widget in Jupyter notebooks.
+nsightful: Convert [NVIDIA Nsight Compute](https://developer.nvidia.com/nsight-compute) CSV
+output to Markdown that can be output to a file or displayed in a tabbed widget in Jupyter
+notebooks.
 """
 
 from .core import (

@@ -1,5 +1,13 @@
 """
-Command-line interface for ncu2markdown.
+Command-line interface for nsightful.
+
+This module provides the main CLI entry point for converting Nsight Compute CSV
+output to Markdown format. It handles argument parsing, file validation, and
+output redirection.
+
+Example usage:
+    nsightful results.csv                # Output to stdout
+    nsightful results.csv -o results.md  # Save to file
 """
 
 import sys
@@ -15,8 +23,8 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  ncu2markdown results.csv                # Output to stdout
-  ncu2markdown results.csv -o results.md  # Save to file
+  nsightful results.csv                # Output to stdout
+  nsightful results.csv -o results.md  # Save to file
 
 Nsight Compute CSV files can be generated using:
   ncu --set full -o MYREPORT ./MYAPPLICATION

@@ -1,12 +1,12 @@
 """
-Tests for ncu2markdown core functionality.
+Tests for nsightful core functionality.
 """
 
 import io
 import pytest
 from typing import Dict, Any
 
-from ncu2markdown.core import (
+from nsightful.core import (
     get_sorted_sections,
     extract_kernel_name,
     format_numeric_value,

@@ -4,3 +4,4 @@ MANIFEST
 venv/
 .coverage
 .cursor/rules/
+.pytest_cache/
