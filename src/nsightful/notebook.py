@@ -203,9 +203,13 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
     update_tabs({"new": kernel_dropdown.value})
 
 
-def display_nsys_sqlite_file_in_notebook(
-    nsys_file: str, title: str = "Nsight Systems"
-) -> None:
+def display_nsys_sqlite_file_in_notebook(nsys_file: str, title: str = "Nsight Systems") -> None:
+    from pathlib import Path
+
+    # Check if file exists before attempting to connect
+    if not Path(nsys_file).exists():
+        raise FileNotFoundError(f"SQLite file '{nsys_file}' not found")
+
     conn = sqlite3.connect(nsys_file)
     conn.row_factory = sqlite3.Row
 

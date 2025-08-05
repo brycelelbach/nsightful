@@ -258,8 +258,8 @@ class TestCliNsysCommand:
 
         assert excinfo.value.code == 1
         captured = capsys.readouterr()
-        # SQLite will try to open the file and fail with a different error
-        assert "Error: During file processing:" in captured.err
+        # Should now properly catch FileNotFoundError and show specific message
+        assert "Error: File 'nonexistent.sqlite' not found." in captured.err
 
     def test_nsys_successful_conversion_to_stdout(self, capsys, sample_nsys_sqlite_db):
         """Test successful nsys conversion with output to stdout."""
@@ -268,8 +268,8 @@ class TestCliNsysCommand:
 
         captured = capsys.readouterr()
         # Should contain JSON output
-        assert captured.out.strip().startswith('[')
-        assert captured.out.strip().endswith(']')
+        assert captured.out.strip().startswith("[")
+        assert captured.out.strip().endswith("]")
 
         # Parse JSON to verify it's valid
         json_data = json.loads(captured.out)
@@ -283,7 +283,9 @@ class TestCliNsysCommand:
         output_file = tmp_path / "output.json"
 
         with patch.object(
-            sys, "argv", ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "-o", str(output_file)]
+            sys,
+            "argv",
+            ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "-o", str(output_file)],
         ):
             main()
 
@@ -314,7 +316,9 @@ class TestCliNsysCommand:
     def test_nsys_multiple_activity_types(self, capsys, sample_nsys_sqlite_db):
         """Test nsys conversion with multiple activity types."""
         with patch.object(
-            sys, "argv", ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "-t", "kernel", "nvtx"]
+            sys,
+            "argv",
+            ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "-t", "kernel", "nvtx"],
         ):
             main()
 
@@ -326,7 +330,9 @@ class TestCliNsysCommand:
     def test_nsys_nvtx_event_prefix(self, capsys, sample_nsys_sqlite_db):
         """Test nsys conversion with NVTX event prefix filtering."""
         with patch.object(
-            sys, "argv", ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "--nvtx-event-prefix", "test"]
+            sys,
+            "argv",
+            ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "--nvtx-event-prefix", "test"],
         ):
             main()
 
@@ -340,7 +346,16 @@ class TestCliNsysCommand:
         color_scheme = '{"test": "thread_state_running", "kernel": "thread_state_iowait"}'
 
         with patch.object(
-            sys, "argv", ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "--nvtx-color-scheme", color_scheme]
+            sys,
+            "argv",
+            [
+                "nsightful",
+                "nsys",
+                "-f",
+                str(sample_nsys_sqlite_db),
+                "--nvtx-color-scheme",
+                color_scheme,
+            ],
         ):
             main()
 
@@ -365,7 +380,16 @@ class TestCliNsysCommand:
         """Test error handling for invalid JSON in color scheme."""
         with pytest.raises(SystemExit) as excinfo:
             with patch.object(
-                sys, "argv", ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "--nvtx-color-scheme", "invalid_json"]
+                sys,
+                "argv",
+                [
+                    "nsightful",
+                    "nsys",
+                    "-f",
+                    str(sample_nsys_sqlite_db),
+                    "--nvtx-color-scheme",
+                    "invalid_json",
+                ],
             ):
                 main()
 
@@ -398,12 +422,15 @@ class TestCliNsysCommand:
                 raise PermissionError("Permission denied")
             # For other files, return a mock
             from unittest.mock import mock_open
+
             return mock_open().return_value
 
         with patch("builtins.open", side_effect=mock_open_func):
             with pytest.raises(SystemExit) as excinfo:
                 with patch.object(
-                    sys, "argv", ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "-o", str(output_file)]
+                    sys,
+                    "argv",
+                    ["nsightful", "nsys", "-f", str(sample_nsys_sqlite_db), "-o", str(output_file)],
                 ):
                     main()
 

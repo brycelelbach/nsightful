@@ -82,7 +82,9 @@ class TestPidToDeviceMapping:
         ]
         mock_conn.execute.return_value = mock_rows
 
-        with pytest.raises(AssertionError, match="A single PID.*is associated with multiple devices"):
+        with pytest.raises(
+            AssertionError, match="A single PID.*is associated with multiple devices"
+        ):
             link_nsys_pid_with_devices(mock_conn)
 
 
@@ -112,7 +114,9 @@ class TestKernelEventParsing:
         ]
         mock_conn.execute.return_value = mock_rows
 
-        per_device_rows, per_device_events = parse_nsys_sqlite_cupti_kernel_events(mock_conn, strings)
+        per_device_rows, per_device_events = parse_nsys_sqlite_cupti_kernel_events(
+            mock_conn, strings
+        )
 
         # Check rows are grouped by device
         assert len(per_device_rows[0]) == 1
@@ -143,7 +147,7 @@ class TestNvtxEventParsing:
         strings = {1: "nvtx_range_1", 2: "nvtx_range_2"}
 
         # Mock the PID to device mapping
-        with patch('nsightful.nsys.link_nsys_pid_with_devices') as mock_link:
+        with patch("nsightful.nsys.link_nsys_pid_with_devices") as mock_link:
             mock_link.return_value = {1234: 0, 5678: 1}
 
             mock_rows = [
@@ -184,7 +188,7 @@ class TestNvtxEventParsing:
         mock_conn = Mock()
         strings = {1: "compute_kernel", 2: "memory_copy"}
 
-        with patch('nsightful.nsys.link_nsys_pid_with_devices') as mock_link:
+        with patch("nsightful.nsys.link_nsys_pid_with_devices") as mock_link:
             mock_link.return_value = {1234: 0}
 
             # Mock that only events with "compute" prefix are returned
@@ -214,7 +218,7 @@ class TestNvtxEventParsing:
         strings = {1: "compute_kernel", 2: "memory_copy"}
         color_scheme = {"compute": "thread_state_running", "memory": "thread_state_iowait"}
 
-        with patch('nsightful.nsys.link_nsys_pid_with_devices') as mock_link:
+        with patch("nsightful.nsys.link_nsys_pid_with_devices") as mock_link:
             mock_link.return_value = {1234: 0}
 
             mock_rows = [
@@ -244,7 +248,7 @@ class TestCudaApiEventParsing:
         mock_conn = Mock()
         strings = {1: "cudaMalloc", 2: "cudaMemcpy"}
 
-        with patch('nsightful.nsys.link_nsys_pid_with_devices') as mock_link:
+        with patch("nsightful.nsys.link_nsys_pid_with_devices") as mock_link:
             mock_link.return_value = {1234: 0, 5678: 1}
 
             mock_rows = [
@@ -267,7 +271,9 @@ class TestCudaApiEventParsing:
             ]
             mock_conn.execute.return_value = mock_rows
 
-            per_device_rows, per_device_events = parse_nsys_sqlite_cuda_api_events(mock_conn, strings)
+            per_device_rows, per_device_events = parse_nsys_sqlite_cuda_api_events(
+                mock_conn, strings
+            )
 
             # Check events are grouped by device
             assert len(per_device_events[0]) == 1
@@ -352,7 +358,12 @@ class TestEventLinking:
         # Create mock sqlite3.Row objects that are hashable
         nvtx_row = Mock()
         nvtx_row.__getitem__ = lambda self, key: {
-            "start": 1000, "end": 3000, "textId": 1, "text": None, "tid": 9999, "pid": 1234
+            "start": 1000,
+            "end": 3000,
+            "textId": 1,
+            "text": None,
+            "tid": 9999,
+            "pid": 1234,
         }[key]
         nvtx_row.__hash__ = lambda self: hash("nvtx_row")
 
@@ -361,7 +372,11 @@ class TestEventLinking:
         cuda_api_row.__hash__ = lambda self: hash("cuda_api_row")
 
         kernel_row = Mock()
-        kernel_row.__getitem__ = lambda self, key: {"correlationId": 12345, "start": 1500, "end": 2500}[key]
+        kernel_row.__getitem__ = lambda self, key: {
+            "correlationId": 12345,
+            "start": 1500,
+            "end": 2500,
+        }[key]
         kernel_row.__hash__ = lambda self: hash("kernel_row")
 
         per_device_nvtx_rows = {0: [nvtx_row]}
@@ -371,7 +386,7 @@ class TestEventLinking:
         kernel_event = {"args": {}}
         per_device_kernel_events = {0: [kernel_event]}
 
-        with patch('nsightful.nsys.find_overlapping_nvtx_intervals') as mock_overlap:
+        with patch("nsightful.nsys.find_overlapping_nvtx_intervals") as mock_overlap:
             mock_overlap.return_value = {nvtx_row: [cuda_api_row]}
 
             result = link_nvtx_events_to_kernel_events(
@@ -385,7 +400,9 @@ class TestEventLinking:
 
             # Check that NVTX region was added to kernel event
             assert "NVTXRegions" in kernel_event["args"]
-            assert kernel_event["args"]["NVTXRegions"] == [None]  # textId 1 maps to None in this case
+            assert kernel_event["args"]["NVTXRegions"] == [
+                None
+            ]  # textId 1 maps to None in this case
 
             # Check that timing information was returned
             assert nvtx_row in result
@@ -401,11 +418,15 @@ class TestFullParsing:
         strings = {1: "test_kernel", 2: "nvtx_range", 3: "cudaMalloc"}
 
         # Mock all the individual parsing functions
-        with patch('nsightful.nsys.parse_nsys_sqlite_cupti_kernel_events') as mock_kernel, \
-             patch('nsightful.nsys.parse_nsys_sqlite_nvtx_events') as mock_nvtx, \
-             patch('nsightful.nsys.parse_nsys_sqlite_cuda_api_events') as mock_api, \
-             patch('nsightful.nsys.link_nsys_pid_with_devices') as mock_link, \
-             patch('nsightful.nsys.link_nvtx_events_to_kernel_events') as mock_link_events:
+        with patch("nsightful.nsys.parse_nsys_sqlite_cupti_kernel_events") as mock_kernel, patch(
+            "nsightful.nsys.parse_nsys_sqlite_nvtx_events"
+        ) as mock_nvtx, patch(
+            "nsightful.nsys.parse_nsys_sqlite_cuda_api_events"
+        ) as mock_api, patch(
+            "nsightful.nsys.link_nsys_pid_with_devices"
+        ) as mock_link, patch(
+            "nsightful.nsys.link_nvtx_events_to_kernel_events"
+        ) as mock_link_events:
 
             # Set up return values
             mock_kernel.return_value = ({0: []}, {0: [{"name": "kernel_event"}]})
@@ -428,12 +449,10 @@ class TestFullParsing:
         mock_conn = Mock()
         strings = {1: "test_kernel"}
 
-        with patch('nsightful.nsys.parse_nsys_sqlite_cupti_kernel_events') as mock_kernel:
+        with patch("nsightful.nsys.parse_nsys_sqlite_cupti_kernel_events") as mock_kernel:
             mock_kernel.return_value = ({0: []}, {0: [{"name": "kernel_event"}]})
 
-            result = parse_nsys_sqlite(
-                mock_conn, strings, activities=[NsysActivityType.KERNEL]
-            )
+            result = parse_nsys_sqlite(mock_conn, strings, activities=[NsysActivityType.KERNEL])
 
             # Should only include kernel events
             assert len(result) == 1
@@ -454,7 +473,7 @@ class TestConversionToJson:
         ]
         mock_conn.execute.return_value = mock_strings
 
-        with patch('nsightful.nsys.parse_nsys_sqlite') as mock_parse:
+        with patch("nsightful.nsys.parse_nsys_sqlite") as mock_parse:
             mock_events = [
                 {"name": "test_kernel", "pid": "Device 0", "tid": "CUDA API 7", "ts": 1000},
                 {"name": "nvtx_range", "pid": "Host 0", "tid": "NVTX 9999", "ts": 2000},
@@ -472,7 +491,7 @@ class TestConversionToJson:
         mock_conn = Mock()
         mock_conn.execute.return_value = [{"id": 1, "value": "test"}]
 
-        with patch('nsightful.nsys.parse_nsys_sqlite') as mock_parse:
+        with patch("nsightful.nsys.parse_nsys_sqlite") as mock_parse:
             mock_parse.return_value = []
 
             activities = [NsysActivityType.KERNEL]
@@ -483,7 +502,7 @@ class TestConversionToJson:
                 mock_conn,
                 activities=activities,
                 event_prefix=event_prefix,
-                color_scheme=color_scheme
+                color_scheme=color_scheme,
             )
 
             # Verify options were passed through
@@ -545,7 +564,7 @@ class TestRealData:
     def test_real_data_event_counts(self, real_sqlite_file, expected_json_file):
         """Test that conversion produces expected number of events."""
         # Load expected data
-        with open(expected_json_file, 'r') as f:
+        with open(expected_json_file, "r") as f:
             expected_data = json.load(f)
 
         # Convert real data
@@ -568,18 +587,14 @@ class TestRealData:
 
         try:
             # Test with only kernel events
-            kernel_only = convert_nsys_sqlite_to_json(
-                conn, activities=[NsysActivityType.KERNEL]
-            )
+            kernel_only = convert_nsys_sqlite_to_json(conn, activities=[NsysActivityType.KERNEL])
 
             # All events should be kernel events
             for event in kernel_only:
                 assert event["cat"] == "cuda"
 
             # Test with only NVTX events
-            nvtx_only = convert_nsys_sqlite_to_json(
-                conn, activities=[NsysActivityType.NVTX_CPU]
-            )
+            nvtx_only = convert_nsys_sqlite_to_json(conn, activities=[NsysActivityType.NVTX_CPU])
 
             # All events should be NVTX events
             for event in nvtx_only:

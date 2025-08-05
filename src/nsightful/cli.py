@@ -128,6 +128,10 @@ def handle_ncu_command(args: Any) -> None:
 def handle_nsys_command(args: Any) -> None:
     """Handle the Nsys subcommand."""
     try:
+        # Check if file exists before attempting to connect
+        if not Path(args.filename).exists():
+            raise FileNotFoundError(f"SQLite file '{args.filename}' not found")
+
         conn = sqlite3.connect(args.filename)
         conn.row_factory = sqlite3.Row
 

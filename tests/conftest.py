@@ -177,15 +177,18 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
 
     try:
         # Create StringIds table
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE StringIds (
                 id INTEGER PRIMARY KEY,
                 value TEXT NOT NULL
             )
-        """)
+        """
+        )
 
         # Create CUPTI_ACTIVITY_KIND_KERNEL table
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE CUPTI_ACTIVITY_KIND_KERNEL (
                 start INTEGER NOT NULL,
                 end INTEGER NOT NULL,
@@ -215,10 +218,12 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
                 graphNodeId INTEGER,
                 sharedMemoryLimitConfig INTEGER
             )
-        """)
+        """
+        )
 
         # Create NVTX_EVENTS table
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE NVTX_EVENTS (
                 start INTEGER NOT NULL,
                 end INTEGER,
@@ -240,10 +245,12 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
                 jsonTextId INTEGER,
                 jsonText TEXT
             )
-        """)
+        """
+        )
 
         # Create CUPTI_ACTIVITY_KIND_RUNTIME table
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE CUPTI_ACTIVITY_KIND_RUNTIME (
                 start INTEGER NOT NULL,
                 end INTEGER NOT NULL,
@@ -254,7 +261,8 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
                 returnValue INTEGER NOT NULL,
                 callchainId INTEGER
             )
-        """)
+        """
+        )
 
         # Insert sample string data
         strings = [
@@ -266,37 +274,94 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
 
         # Insert sample kernel data
         kernel_data = [
-            (1000000, 2000000, 0, 1, 7, 12345, 1234 << 24, 1, 1, None, None, None, 32, 128, 1, 1, 256, 1, 1, 0, 0, 0, 0, 1, None, None, None),
+            (
+                1000000,
+                2000000,
+                0,
+                1,
+                7,
+                12345,
+                1234 << 24,
+                1,
+                1,
+                None,
+                None,
+                None,
+                32,
+                128,
+                1,
+                1,
+                256,
+                1,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                None,
+                None,
+                None,
+            ),
         ]
-        conn.executemany("""
+        conn.executemany(
+            """
             INSERT INTO CUPTI_ACTIVITY_KIND_KERNEL
             (start, end, deviceId, contextId, streamId, correlationId, globalPid, demangledName, shortName, mangledName,
              launchType, cacheConfig, registersPerThread, gridX, gridY, gridZ, blockX, blockY, blockZ,
              staticSharedMemory, dynamicSharedMemory, localMemoryPerThread, localMemoryTotal, gridId,
              sharedMemoryExecuted, graphNodeId, sharedMemoryLimitConfig)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, kernel_data)
+        """,
+            kernel_data,
+        )
 
         # Insert sample NVTX data
         nvtx_data = [
-            (500000, 2500000, 59, None, None, None, None, (1234 << 24) | 9999, None, 2, None, None, None, None, None, None, None, None, None),
+            (
+                500000,
+                2500000,
+                59,
+                None,
+                None,
+                None,
+                None,
+                (1234 << 24) | 9999,
+                None,
+                2,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ),
         ]
-        conn.executemany("""
+        conn.executemany(
+            """
             INSERT INTO NVTX_EVENTS
             (start, end, eventType, rangeId, category, color, text, globalTid, endGlobalTid, textId, domainId,
              uint64Value, int64Value, doubleValue, uint32Value, int32Value, floatValue, jsonTextId, jsonText)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, nvtx_data)
+        """,
+            nvtx_data,
+        )
 
         # Insert sample CUDA API data
         api_data = [
             (800000, 1200000, 0, (1234 << 24) | 9999, 12345, 3, 0, None),
         ]
-        conn.executemany("""
+        conn.executemany(
+            """
             INSERT INTO CUPTI_ACTIVITY_KIND_RUNTIME
             (start, end, eventClass, globalTid, correlationId, nameId, returnValue, callchainId)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, api_data)
+        """,
+            api_data,
+        )
 
         conn.commit()
 
@@ -321,7 +386,7 @@ def sample_nsys_json() -> list:
             "dur": 1000.0,
             "tid": "CUDA API 7",
             "pid": "Device 0",
-            "args": {}
+            "args": {},
         },
         {
             "name": "nvtx_range",
@@ -331,7 +396,7 @@ def sample_nsys_json() -> list:
             "dur": 2000.0,
             "tid": "NVTX 9999",
             "pid": "Host 0",
-            "args": {}
+            "args": {},
         },
         {
             "name": "cudaMalloc",
@@ -341,6 +406,6 @@ def sample_nsys_json() -> list:
             "dur": 400.0,
             "tid": "CUDA API 9999",
             "pid": "Host 0",
-            "args": {"correlationId": 12345}
-        }
+            "args": {"correlationId": 12345},
+        },
     ]

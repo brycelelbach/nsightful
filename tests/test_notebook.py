@@ -58,7 +58,10 @@ class TestDisplayNcuDataInNotebook:
             {
                 "ipywidgets": mock_widgets,
                 "IPython.display": MagicMock(
-                    display=mock_display, HTML=mock_html, Markdown=mock_markdown, clear_output=mock_clear_output
+                    display=mock_display,
+                    HTML=mock_html,
+                    Markdown=mock_markdown,
+                    clear_output=mock_clear_output,
                 ),
             },
         ):
@@ -95,7 +98,10 @@ class TestDisplayNcuDataInNotebook:
             {
                 "ipywidgets": mock_widgets,
                 "IPython.display": MagicMock(
-                    display=mock_display, HTML=mock_html, Markdown=mock_markdown, clear_output=mock_clear_output
+                    display=mock_display,
+                    HTML=mock_html,
+                    Markdown=mock_markdown,
+                    clear_output=mock_clear_output,
                 ),
             },
         ):
@@ -128,7 +134,10 @@ class TestDisplayNcuDataInNotebook:
             {
                 "ipywidgets": mock_widgets,
                 "IPython.display": MagicMock(
-                    display=mock_display, HTML=mock_html, Markdown=mock_markdown, clear_output=mock_clear_output
+                    display=mock_display,
+                    HTML=mock_html,
+                    Markdown=mock_markdown,
+                    clear_output=mock_clear_output,
                 ),
             },
         ):
@@ -165,7 +174,10 @@ class TestDisplayNcuDataInNotebook:
             {
                 "ipywidgets": mock_widgets,
                 "IPython.display": MagicMock(
-                    display=mock_display, HTML=mock_html, Markdown=mock_markdown, clear_output=mock_clear_output
+                    display=mock_display,
+                    HTML=mock_html,
+                    Markdown=mock_markdown,
+                    clear_output=mock_clear_output,
                 ),
             },
         ):
@@ -202,7 +214,9 @@ class TestDisplayNcuDataInNotebook:
             "sys.modules",
             {
                 "ipywidgets": mock_widgets,
-                "IPython.display": MagicMock(display=mock_display, HTML=Mock(), Markdown=Mock(), clear_output=Mock()),
+                "IPython.display": MagicMock(
+                    display=mock_display, HTML=Mock(), Markdown=Mock(), clear_output=Mock()
+                ),
                 # Mock google.colab to not exist
                 "google": None,
                 "google.colab": None,
@@ -240,7 +254,7 @@ class TestDisplayNsysDataInNotebook:
                 "dur": 500.0,
                 "tid": "CUDA API 7",
                 "pid": "Device 0",
-                "args": {}
+                "args": {},
             },
             {
                 "name": "nvtx_range",
@@ -250,8 +264,8 @@ class TestDisplayNsysDataInNotebook:
                 "dur": 300.0,
                 "tid": "NVTX 9999",
                 "pid": "Host 0",
-                "args": {}
-            }
+                "args": {},
+            },
         ]
 
     def test_display_nsys_json_missing_dependencies(self, capsys, sample_nsys_json):
@@ -297,7 +311,9 @@ class TestDisplayNsysDataInNotebook:
                 "IPython.display": MagicMock(display=mock_display, HTML=mock_html),
             },
         ):
-            display_nsys_json_in_notebook(sample_nsys_json, title="Custom Title", filename="custom.json")
+            display_nsys_json_in_notebook(
+                sample_nsys_json, title="Custom Title", filename="custom.json"
+            )
 
             # Check that custom title and filename are in the HTML
             html_call = mock_html.call_args[0][0]
@@ -366,10 +382,7 @@ class TestDisplayNsysDataInNotebook:
                 "IPython.display": MagicMock(display=mock_display, HTML=mock_html),
             },
         ):
-            display_nsys_sqlite_file_in_notebook(
-                str(real_sqlite_file),
-                title="Custom Nsys Title"
-            )
+            display_nsys_sqlite_file_in_notebook(str(real_sqlite_file), title="Custom Nsys Title")
 
             # Check that custom title is used
             html_call = mock_html.call_args[0][0]
@@ -400,6 +413,7 @@ class TestDisplayNsysDataInNotebook:
             # The base64 string should be valid (we can't easily decode it here without
             # importing base64, but we can check it's present and looks reasonable)
             import re
+
             b64_match = re.search(r'const B64\s*=\s*["\']([A-Za-z0-9+/=]+)["\']', html_call)
             assert b64_match is not None
             b64_string = b64_match.group(1)
@@ -453,16 +467,18 @@ class TestDisplayNsysDataInNotebook:
         # Create a large dataset
         large_json = []
         for i in range(1000):
-            large_json.append({
-                "name": f"kernel_{i}",
-                "ph": "X",
-                "cat": "cuda",
-                "ts": i * 1000.0,
-                "dur": 100.0,
-                "tid": f"CUDA API {i % 10}",
-                "pid": f"Device {i % 2}",
-                "args": {"iteration": i}
-            })
+            large_json.append(
+                {
+                    "name": f"kernel_{i}",
+                    "ph": "X",
+                    "cat": "cuda",
+                    "ts": i * 1000.0,
+                    "dur": 100.0,
+                    "tid": f"CUDA API {i % 10}",
+                    "pid": f"Device {i % 2}",
+                    "args": {"iteration": i},
+                }
+            )
 
         mock_display = Mock()
         mock_html = Mock()
@@ -494,7 +510,7 @@ class TestDisplayNsysDataInNotebook:
                 "dur": 100.0,
                 "tid": "CUDA API 0",
                 "pid": "Device 0",
-                "args": {"description": "Test with émojis 🚀 and ñoño"}
+                "args": {"description": "Test with émojis 🚀 and ñoño"},
             }
         ]
 
