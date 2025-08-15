@@ -6,6 +6,7 @@ import base64
 import sqlite3
 import csv
 import json
+import uuid
 from typing import Iterable, Dict, Any, Optional, List
 from .ncu import (
     parse_ncu_csv,
@@ -236,20 +237,23 @@ def display_nsys_json_in_notebook(
         print("Install with: pip install ipywidgets")
         return
 
+    # Generate a unique identifier for this invocation to avoid conflicts
+    unique_id = str(uuid.uuid4()).replace('-', '')[:8]
+
     # Convert the list to JSON string and then to bytes for base64 encoding
     json_str = json.dumps(nsys_json)
     json_bytes = json_str.encode("utf-8")
     b64 = base64.b64encode(json_bytes).decode("ascii")
 
     html = f"""
-    <button id="open-perfetto" style="padding:8px 12px;font-size:14px">Open in Perfetto</button>
+    <button id="open-perfetto-{unique_id}" style="padding:8px 12px;font-size:14px">Open in Perfetto</button>
     <script>
     (() => {{
-    const TITLE     = {title!r};
-    const FILE_NAME = {filename!r};
-    const B64       = {b64!r};
+    const TITLE_{unique_id}     = {title!r};
+    const FILE_NAME_{unique_id} = {filename!r};
+    const B64_{unique_id}       = {b64!r};
 
-    function b64ToArrayBuffer(b64) {{
+    function b64ToArrayBuffer_{unique_id}(b64) {{
         const binary = atob(b64);
         const len = binary.length;
         const bytes = new Uint8Array(len);
@@ -257,7 +261,7 @@ def display_nsys_json_in_notebook(
         return bytes.buffer;
     }}
 
-    async function openPerfetto() {{
+    async function openPerfetto_{unique_id}() {{
         const ui = window.open('https://ui.perfetto.dev/#!/');
         if (!ui) {{ alert('Popup blocked. Allow popups for this page and click again.'); return; }}
 
@@ -277,15 +281,15 @@ def display_nsys_json_in_notebook(
 
         ui.postMessage({{
         perfetto: {{
-            buffer: b64ToArrayBuffer(B64),
-            title: TITLE,
-            fileName: FILE_NAME
+            buffer: b64ToArrayBuffer_{unique_id}(B64_{unique_id}),
+            title: TITLE_{unique_id},
+            fileName: FILE_NAME_{unique_id}
             // No URL here; the Share button won't generate a link without one.
         }}
         }}, '*');
     }}
 
-    document.getElementById('open-perfetto').addEventListener('click', openPerfetto);
+    document.getElementById('open-perfetto-{unique_id}').addEventListener('click', openPerfetto_{unique_id});
     }})();
     </script>
     """
