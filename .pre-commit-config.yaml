@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        name: black
+        entry: black
+        language: system
+        args: [--line-length=100, --target-version=py38]
+        types: [python]
+
+      - id: flake8
+        name: flake8
+        entry: flake8
+        language: system
+        args: [
+          "--select=E9,F63,F7,F82",
+          "--max-line-length=100",
+          "--max-complexity=10"
+        ]
+        types: [python]
+
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        args: [--ignore-missing-imports]
+        files: ^src/.*\.py$
+        types: [python]

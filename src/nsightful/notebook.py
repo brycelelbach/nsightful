@@ -238,7 +238,7 @@ def display_nsys_json_in_notebook(
         return
 
     # Generate a unique identifier for this invocation to avoid conflicts
-    unique_id = str(uuid.uuid4()).replace('-', '')[:8]
+    unique_id = str(uuid.uuid4()).replace("-", "")[:8]
 
     # Convert the list to JSON string and then to bytes for base64 encoding
     json_str = json.dumps(nsys_json)

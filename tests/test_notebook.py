@@ -297,7 +297,7 @@ class TestDisplayNsysDataInNotebook:
 
             # Check that HTML contains expected elements
             html_call = mock_html.call_args[0][0]
-            assert re.search(r'open-perfetto-[a-f0-9]{8}', html_call)
+            assert re.search(r"open-perfetto-[a-f0-9]{8}", html_call)
             assert "https://ui.perfetto.dev" in html_call
             assert "postMessage" in html_call
 
@@ -408,12 +408,14 @@ class TestDisplayNsysDataInNotebook:
             html_call = mock_html.call_args[0][0]
 
             # Should contain base64 encoded data
-            assert re.search(r'const B64_[a-f0-9]{8}', html_call)
-            assert re.search(r'b64ToArrayBuffer_[a-f0-9]{8}', html_call)
+            assert re.search(r"const B64_[a-f0-9]{8}", html_call)
+            assert re.search(r"b64ToArrayBuffer_[a-f0-9]{8}", html_call)
 
             # The base64 string should be valid (we can't easily decode it here without
             # importing base64, but we can check it's present and looks reasonable)
-            b64_match = re.search(r'const B64_[a-f0-9]{8}\s*=\s*["\']([A-Za-z0-9+/=]+)["\']', html_call)
+            b64_match = re.search(
+                r'const B64_[a-f0-9]{8}\s*=\s*["\']([A-Za-z0-9+/=]+)["\']', html_call
+            )
             assert b64_match is not None
             b64_string = b64_match.group(1)
             assert len(b64_string) > 0
@@ -496,7 +498,7 @@ class TestDisplayNsysDataInNotebook:
 
             # Check that the data was encoded
             html_call = mock_html.call_args[0][0]
-            assert re.search(r'const B64_[a-f0-9]{8}', html_call)
+            assert re.search(r"const B64_[a-f0-9]{8}", html_call)
 
     def test_nsys_json_special_characters(self):
         """Test handling of JSON data with special characters."""
@@ -552,8 +554,8 @@ class TestDisplayNsysDataInNotebook:
             second_html = mock_html.call_args_list[1][0][0]
 
             # Extract unique IDs from both calls
-            first_id_match = re.search(r'open-perfetto-([a-f0-9]{8})', first_html)
-            second_id_match = re.search(r'open-perfetto-([a-f0-9]{8})', second_html)
+            first_id_match = re.search(r"open-perfetto-([a-f0-9]{8})", first_html)
+            second_id_match = re.search(r"open-perfetto-([a-f0-9]{8})", second_html)
 
             assert first_id_match is not None
             assert second_id_match is not None
@@ -567,8 +569,8 @@ class TestDisplayNsysDataInNotebook:
             # Both should be valid 8-character hex strings
             assert len(first_id) == 8
             assert len(second_id) == 8
-            assert all(c in '0123456789abcdef' for c in first_id)
-            assert all(c in '0123456789abcdef' for c in second_id)
+            assert all(c in "0123456789abcdef" for c in first_id)
+            assert all(c in "0123456789abcdef" for c in second_id)
 
     def test_nsys_file_not_found_error(self):
         """Test error handling when SQLite file doesn't exist."""

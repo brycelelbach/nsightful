@@ -291,6 +291,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install in development mode with dev dependencies
 pip install -e ".[dev]"
+
+# Set up pre-commit hooks
+pre-commit install
 ```
 
 ### Running Tests
@@ -307,19 +310,26 @@ pip install tox
 tox
 ```
 
-### Running Code Quality Checks
+### Code Quality Checks
 
-The project uses several tools to maintain code quality:
+This project uses `pre-commit` to automatically run code quality checks. The hooks include:
+- **Black**: Code formatting.
+- **Flake8**: Linting for syntax errors and code quality issues.
+- **MyPy**: Static type checking
+
+To run all pre-commit hooks on all files:
 
 ```bash
-# Format code with black
-black src/ tests/
+# Run hooks on all files
+pre-commit run --all-files
 
-# Lint with flake8
-flake8 --select=E9,F63,F7,F82 src/ tests/
+# Run all hooks on staged files only
+pre-commit run
 
-# Type checking with mypy
-mypy  --ignore-missing-imports src/
+# Run a specific hook
+pre-commit run black
+pre-commit run flake8
+pre-commit run mypy
 ```
 
 ## License
