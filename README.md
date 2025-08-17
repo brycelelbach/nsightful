@@ -94,7 +94,7 @@ with open('myreport.csv', 'r') as f:
     nsightful.display_ncu_csv_in_notebook(f)
 ```
 
-If you want to profile cells with nsightful without the Nsight JupyterLab extension, you can use
+If you want to profile cells with Nsightful without the Nsight JupyterLab extension, you can use
 `%%writefile` to output a Python file that will be run under `ncu`. Note that with this approach,
 the cell must be self contained; it cannot depend on any other cells.
 
@@ -134,6 +134,100 @@ import nsightful
 
 copy_blocked_csv = !ncu --import copy_blocked.ncu-rep --csv
 nsightful.display_ncu_csv_in_notebook(copy_blocked_csv)
+```
+
+### Nsight Systems (NSYS)
+
+#### Generating NSYS SQLite Data
+
+First, you need to generate NSYS SQLite data from your CUDA application:
+
+```bash
+# Profile your application
+nsys profile -o myreport ./myapplication
+
+# Convert SQLite to Chrome Trace JSON (output to a file)
+nsightful myreport.sqlite -o myreport.json
+```
+
+#### NSYS Python Conversion API
+
+```python
+import nsightful
+
+# Convert SQLite file to Chrome Trace JSON string
+with open('myreport.sqlite', 'rb') as f:
+    json_content = nsightful.convert_nsys_sqlite_to_chrome_trace_json(f)
+    print(json_content)
+
+# Parse structured data for custom processing
+with open('myreport.sqlite', 'rb') as f:
+    nsys_data = nsightful.parse_nsys_sqlite(f)
+    # nsys_data is a structured dictionary with trace events
+```
+
+#### NSYS Jupyter Notebook Widget
+
+Nsightful provides a function to display NSYS data in [Perfetto](https://ui.perfetto.dev/), a visual profiler with a interactive timeline view.
+
+If you have an existing report file or use the Nsight JupyterLab extension to run a cell under the profile and collect a report, then you can display it with Nsightful:
+
+```python
+!pip install "nsightful[notebook] @ git+https://github.com/brycelelbach/nsightful.git"
+```
+
+```python
+import nsightful
+
+nsightful.display_nsys_sqlite_file_in_notebook('myreport.sqlite')
+```
+
+or
+
+```python
+import nsightful
+
+with open('myreport.sqlite', 'rb') as f:
+    nsightful.display_nsys_sqlite_in_notebook(f)
+```
+
+If you want to profile cells with Nsightful without the Nsight JupyterLab extension, you can use `%%writefile` to output a Python file that will be run under `nsys`. Note that with this approach, the cell must be self contained; it cannot depend on any other cells.
+
+```bash
+!pip install "nsightful[notebook] @ git+https://github.com/brycelelbach/nsightful.git"
+```
+
+```python
+%%writefile power_iteration.py
+
+import cupy as cp
+
+# Power iteration to find dominant eigenvector
+size = 4096
+iterations = 100
+
+# Create a random symmetric matrix
+A = cp.random.random((size, size), dtype=cp.float32)
+A = (A + A.T) / 2  # Make symmetric
+
+# Initial vector
+b = cp.random.random(size, dtype=cp.float32)
+
+for i in range(iterations):
+    b_next = cp.dot(A, b)
+    b = b_next / cp.linalg.norm(b_next)
+
+cp.cuda.Device().synchronize()
+```
+
+```bash
+!nsys profile -o power_iteration python power_iteration.py
+```
+
+```python
+import nsightful
+
+nsightful.display_nsys_sqlite_file_in_notebook('power_iteration.sqlite')
 ```
 
 ## Example Output
