@@ -22,13 +22,13 @@ class TestDisplayNcuDataInNotebook:
     """Test the display_ncu_csv_in_notebook function."""
 
     def test_missing_dependencies_handling(self, capsys, sample_csv_io):
-        """Test handling when ipywidgets/IPython are not available."""
+        """Test handling when IPython is not available."""
         with patch("builtins.__import__", side_effect=ImportError):
             display_ncu_csv_in_notebook(sample_csv_io)
 
         captured = capsys.readouterr()
-        assert "Error: ipywidgets and IPython are required" in captured.out
-        assert "pip install ipywidgets" in captured.out
+        assert "Error: IPython is required for this function" in captured.out
+        assert "pip install ipython" in captured.out
 
     def test_successful_display_basic(self, sample_csv_io):
         """Test that display function handles sample data without crashing."""
