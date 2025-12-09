@@ -6,6 +6,7 @@ import base64
 import sqlite3
 import csv
 import json
+import os
 import uuid
 from typing import Iterable, Dict, Any, Optional, List
 from .ncu import (
@@ -17,26 +18,153 @@ from .ncu import (
 from .nsys import convert_nsys_sqlite_to_json
 
 
+def is_interactive_notebook() -> bool:
+    """Check if we're in an interactive notebook environment that supports widgets.
+
+    Returns False when running under nbclient or other non-interactive execution
+    environments where ipywidgets with clear_output(wait=True) would hang.
+    """
+    # Check for explicit environment variable override
+    env_val = os.environ.get("NSIGHTFUL_USE_WIDGETS", "").lower()
+    if env_val == "false" or env_val == "0":
+        return False
+    if env_val == "true" or env_val == "1":
+        return True
+
+    try:
+        from IPython import get_ipython
+
+        ip = get_ipython()
+        if ip is None:
+            return False
+
+        # Check if we're in an IPython kernel (as opposed to terminal IPython)
+        if not hasattr(ip, "kernel"):
+            return False
+
+        # Check if there's a comm manager with widget support
+        # In nbclient, the comm infrastructure exists but widgets don't render properly
+        # and clear_output(wait=True) can hang waiting for frontend acknowledgment
+        if hasattr(ip.kernel, "comm_manager"):
+            comm_manager = ip.kernel.comm_manager
+            # Check if jupyter.widget target is registered (indicates widget support)
+            targets = getattr(comm_manager, "targets", {})
+            if not any("jupyter.widget" in str(t) for t in targets):
+                # No widget comm target - likely nbclient or similar
+                return False
+
+        # Additional heuristic: check if we're being executed programmatically
+        # by looking at the parent header. In nbclient, cells are executed via
+        # execute_request but there's no real frontend to handle widget updates.
+        parent_header = getattr(ip.kernel, "_parent_header", {})
+        if parent_header:
+            # We have a parent header, which means we're executing in a kernel
+            # But we can't easily tell if it's interactive or nbclient
+            # Fall back to checking if stdin is available (not in nbclient)
+            try:
+                import sys
+
+                # In nbclient, stdin is typically not interactive
+                if hasattr(sys.stdin, "isatty") and not sys.stdin.isatty():
+                    # Not a TTY, but this could also be a remote Jupyter session
+                    # So we need another check
+                    pass
+            except Exception:
+                pass
+
+        return True
+
+    except Exception:
+        return False
+
+
 def display_ncu_csv_file_in_notebook(ncu_file: str) -> None:
     with open(ncu_file, "r") as f:
         display_ncu_csv_in_notebook(f)
 
 
+def display_ncu_simple_markdown(ncu_dict: Dict[str, Any]) -> None:
+    """Display NCU data as simple markdown without widgets.
+
+    This is used as a fallback when ipywidgets are not available or
+    when running in a non-interactive environment like nbclient.
+    """
+    from IPython.display import display, Markdown
+
+    for kernel_name, sections in ncu_dict.items():
+        # Display kernel title
+        display(Markdown(f"# {kernel_name}"))
+
+        if not sections:
+            display(Markdown(f"No sections found for kernel: {kernel_name}"))
+            continue
+
+        # Display summary of rules first
+        summary_lines = ["## Summary\n"]
+        rules_found = False
+        for section_name, section_data in get_sorted_ncu_sections(sections):
+            if section_data.get("Rules"):
+                rules_found = True
+                summary_lines.append(f"### {section_name}\n")
+                for rule in section_data["Rules"]:
+                    prefix = format_ncu_rule_type(rule["Type"])
+                    summary_lines.append(f"{prefix}: {rule['Description']}")
+                    if rule.get("Speedup") and rule.get("Speedup_type"):
+                        summary_lines.append(
+                            f"*Estimated Speedup ({rule['Speedup_type']}): {rule['Speedup']}%*"
+                        )
+                    summary_lines.append("")
+
+        if rules_found:
+            display(Markdown("\n".join(summary_lines)))
+        else:
+            display(Markdown("## Summary\n\nNo rules found in any section."))
+
+        # Display each section
+        for section_name, section_data in get_sorted_ncu_sections(sections):
+            if "Markdown" in section_data and section_data["Markdown"].strip():
+                display(Markdown(section_data["Markdown"]))
+
+
 def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
     """Display NCU data in a Jupyter notebook with tabs and a kernel selector.
+
+    In interactive notebooks, displays an interactive widget with tabs for each
+    profiling section. In non-interactive environments (like nbclient), falls
+    back to simple markdown display.
 
     Args:
         ncu_csv: Iterable object that produces lines of CSV, e.g. a file object.
     """
     try:
-        import ipywidgets as widgets
-        from IPython.display import display, HTML, Markdown, clear_output
+        from IPython.display import display, HTML, Markdown
     except ImportError:
-        print("Error: ipywidgets and IPython are required for this function.")
-        print("Install with: pip install ipywidgets")
+        print("Error: IPython is required for this function.")
+        print("Install with: pip install ipython")
         return
 
+    # Parse the NCU data
     ncu_dict = add_per_section_ncu_markdown(parse_ncu_csv(ncu_csv))
+
+    # Check if we should use widgets or fall back to simple display
+    use_widgets = is_interactive_notebook()
+
+    # Also check if ipywidgets is available
+    if use_widgets:
+        try:
+            import ipywidgets as widgets
+            from IPython.display import clear_output
+        except ImportError:
+            use_widgets = False
+
+    if not use_widgets:
+        # Fall back to simple markdown display
+        display_ncu_simple_markdown(ncu_dict)
+        return
+
+    # Import widgets for interactive display
+    import ipywidgets as widgets
+    from IPython.display import clear_output
 
     # Disable nested scrolling in Google Colab because it scrolls past the tabs and selector.
     try:
@@ -112,7 +240,9 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
         selected_kernel = change["new"]
 
         with output_area:
-            clear_output(wait=True)
+            # Use wait=False to avoid blocking in environments where frontend
+            # acknowledgment may not come (prevents hangs in edge cases)
+            clear_output(wait=False)
 
             if selected_kernel not in ncu_dict:
                 print(f"No data found for kernel: {selected_kernel}")
