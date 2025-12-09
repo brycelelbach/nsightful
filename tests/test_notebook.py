@@ -3,6 +3,7 @@ Tests for nsightful Jupyter notebook functionality.
 """
 
 import io
+import os
 import sqlite3
 import json
 import re
@@ -12,10 +13,36 @@ import pytest
 
 from nsightful.notebook import (
     display_ncu_csv_in_notebook,
+    display_ncu_simple_markdown,
     display_nsys_sqlite_file_in_notebook,
     display_nsys_sqlite_in_notebook,
     display_nsys_json_in_notebook,
+    is_interactive_notebook,
 )
+
+
+class TestIsInteractiveNotebook:
+    """Test the is_interactive_notebook function."""
+
+    def test_env_var_false(self, monkeypatch):
+        """Test that NSIGHTFUL_USE_WIDGETS=false returns False."""
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "false")
+        assert is_interactive_notebook() is False
+
+    def test_env_var_zero(self, monkeypatch):
+        """Test that NSIGHTFUL_USE_WIDGETS=0 returns False."""
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "0")
+        assert is_interactive_notebook() is False
+
+    def test_env_var_true(self, monkeypatch):
+        """Test that NSIGHTFUL_USE_WIDGETS=true returns True."""
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "true")
+        assert is_interactive_notebook() is True
+
+    def test_env_var_one(self, monkeypatch):
+        """Test that NSIGHTFUL_USE_WIDGETS=1 returns True."""
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "1")
+        assert is_interactive_notebook() is True
 
 
 class TestDisplayNcuDataInNotebook:
@@ -30,8 +57,11 @@ class TestDisplayNcuDataInNotebook:
         assert "Error: IPython is required for this function" in captured.out
         assert "pip install ipython" in captured.out
 
-    def test_successful_display_basic(self, sample_csv_io):
+    def test_successful_display_basic(self, monkeypatch, sample_csv_io):
         """Test that display function handles sample data without crashing."""
+        # Enable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "true")
+
         # Mock the imports at the function level
         mock_widgets = Mock()
         mock_display = Mock()
@@ -73,10 +103,13 @@ class TestDisplayNcuDataInNotebook:
             mock_widgets.Dropdown.assert_called_once()
             mock_widgets.Output.assert_called()
 
-    def test_real_data_parsing(self, real_test_csv_file):
+    def test_real_data_parsing(self, monkeypatch, real_test_csv_file):
         """Test that real data can be parsed without errors."""
         if not real_test_csv_file.exists():
             pytest.skip(f"Real test file {real_test_csv_file} not found")
+
+        # Enable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "true")
 
         # Mock the imports using sys.modules since they're imported inside the function
         mock_widgets = Mock()
@@ -110,8 +143,11 @@ class TestDisplayNcuDataInNotebook:
                 # This should not raise any exceptions
                 display_ncu_csv_in_notebook(f)
 
-    def test_empty_data_handling(self):
+    def test_empty_data_handling(self, monkeypatch):
         """Test handling of empty CSV data."""
+        # Enable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "true")
+
         empty_csv = io.StringIO("")
 
         # Mock the imports using sys.modules since they're imported inside the function
@@ -145,8 +181,11 @@ class TestDisplayNcuDataInNotebook:
             # This should handle empty data gracefully
             display_ncu_csv_in_notebook(empty_csv)
 
-    def test_widget_creation_flow(self, sample_csv_io):
+    def test_widget_creation_flow(self, monkeypatch, sample_csv_io):
         """Test the widget creation and interaction flow."""
+        # Enable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "true")
+
         mock_widgets = Mock()
         mock_display = Mock()
         mock_html = Mock()
@@ -196,8 +235,11 @@ class TestDisplayNcuDataInNotebook:
             # Verify display calls
             assert mock_display.call_count >= 2  # At least dropdown and output area
 
-    def test_colab_import_handling(self, sample_csv_io):
+    def test_colab_import_handling(self, monkeypatch, sample_csv_io):
         """Test that Google Colab imports are handled gracefully."""
+        # Enable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "true")
+
         # Mock successful widget imports
         mock_widgets = Mock()
         mock_display = Mock()
@@ -228,6 +270,166 @@ class TestDisplayNcuDataInNotebook:
 
             # Should still create widgets even if Colab import fails
             mock_widgets.Dropdown.assert_called_once()
+
+
+class TestSimpleMarkdownDisplay:
+    """Test the simple markdown fallback display (when widgets are disabled)."""
+
+    def test_simple_markdown_fallback_when_widgets_disabled(self, monkeypatch, sample_csv_io):
+        """Test that simple markdown is used when NSIGHTFUL_USE_WIDGETS=false."""
+        # Disable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "false")
+
+        mock_display = Mock()
+        mock_markdown = Mock()
+
+        with patch.dict(
+            "sys.modules",
+            {
+                "IPython.display": MagicMock(
+                    display=mock_display,
+                    Markdown=mock_markdown,
+                ),
+            },
+        ):
+            display_ncu_csv_in_notebook(sample_csv_io)
+
+            # Should call display with Markdown (not widgets)
+            assert mock_display.call_count >= 1
+            assert mock_markdown.call_count >= 1
+
+    def test_simple_markdown_displays_kernel_names(self, monkeypatch, sample_csv_io):
+        """Test that simple markdown displays kernel names as headers."""
+        # Disable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "false")
+
+        mock_display = Mock()
+        markdown_calls = []
+
+        def capture_markdown(text):
+            markdown_calls.append(text)
+            return Mock()
+
+        mock_markdown = Mock(side_effect=capture_markdown)
+
+        with patch.dict(
+            "sys.modules",
+            {
+                "IPython.display": MagicMock(
+                    display=mock_display,
+                    Markdown=mock_markdown,
+                ),
+            },
+        ):
+            display_ncu_csv_in_notebook(sample_csv_io)
+
+            # Check that kernel names appear in the markdown calls
+            all_markdown = " ".join(markdown_calls)
+            assert "simple_kernel" in all_markdown
+            assert "complex_kernel_template" in all_markdown
+
+    def test_simple_markdown_displays_summary(self, monkeypatch, sample_csv_io):
+        """Test that simple markdown displays a summary section."""
+        # Disable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "false")
+
+        mock_display = Mock()
+        markdown_calls = []
+
+        def capture_markdown(text):
+            markdown_calls.append(text)
+            return Mock()
+
+        mock_markdown = Mock(side_effect=capture_markdown)
+
+        with patch.dict(
+            "sys.modules",
+            {
+                "IPython.display": MagicMock(
+                    display=mock_display,
+                    Markdown=mock_markdown,
+                ),
+            },
+        ):
+            display_ncu_csv_in_notebook(sample_csv_io)
+
+            # Check that Summary appears in the markdown
+            all_markdown = " ".join(markdown_calls)
+            assert "Summary" in all_markdown
+
+    def test_display_ncu_simple_markdown_directly(self, sample_csv_io):
+        """Test calling display_ncu_simple_markdown directly."""
+        from nsightful.ncu import parse_ncu_csv, add_per_section_ncu_markdown
+
+        mock_display = Mock()
+        mock_markdown = Mock()
+
+        ncu_dict = add_per_section_ncu_markdown(parse_ncu_csv(sample_csv_io))
+
+        with patch.dict(
+            "sys.modules",
+            {
+                "IPython.display": MagicMock(
+                    display=mock_display,
+                    Markdown=mock_markdown,
+                ),
+            },
+        ):
+            display_ncu_simple_markdown(ncu_dict)
+
+            # Should call display multiple times (kernel titles, summary, sections)
+            assert mock_display.call_count >= 1
+            assert mock_markdown.call_count >= 1
+
+    def test_simple_markdown_with_empty_data(self, monkeypatch):
+        """Test simple markdown display with empty CSV data."""
+        # Disable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "false")
+
+        empty_csv = io.StringIO("")
+
+        mock_display = Mock()
+        mock_markdown = Mock()
+
+        with patch.dict(
+            "sys.modules",
+            {
+                "IPython.display": MagicMock(
+                    display=mock_display,
+                    Markdown=mock_markdown,
+                ),
+            },
+        ):
+            # Should handle empty data gracefully
+            display_ncu_csv_in_notebook(empty_csv)
+
+    def test_simple_markdown_with_real_data(self, monkeypatch, real_test_csv_file):
+        """Test simple markdown display with real test data."""
+        if not real_test_csv_file.exists():
+            pytest.skip(f"Real test file {real_test_csv_file} not found")
+
+        # Disable widgets via environment variable
+        monkeypatch.setenv("NSIGHTFUL_USE_WIDGETS", "false")
+
+        mock_display = Mock()
+        mock_markdown = Mock()
+
+        with patch.dict(
+            "sys.modules",
+            {
+                "IPython.display": MagicMock(
+                    display=mock_display,
+                    Markdown=mock_markdown,
+                ),
+            },
+        ):
+            with open(real_test_csv_file, "r") as f:
+                # This should not raise any exceptions
+                display_ncu_csv_in_notebook(f)
+
+            # Should have displayed markdown content
+            assert mock_display.call_count >= 1
+            assert mock_markdown.call_count >= 1
 
 
 class TestDisplayNsysDataInNotebook:
