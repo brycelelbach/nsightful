@@ -38,6 +38,13 @@ def is_interactive_notebook() -> bool:
         if ip is None:
             return False
 
+        # Check if ipywidgets is available, and make sure it's imported before we check for a
+        # comm manager
+        try:
+            import ipywidgets as widgets
+        except ImportError:
+            return False
+
         # Check if we're in an IPython kernel (as opposed to terminal IPython)
         if not hasattr(ip, "kernel"):
             return False
@@ -148,14 +155,6 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
 
     # Check if we should use widgets or fall back to simple display
     use_widgets = is_interactive_notebook()
-
-    # Also check if ipywidgets is available
-    if use_widgets:
-        try:
-            import ipywidgets as widgets
-            from IPython.display import clear_output
-        except ImportError:
-            use_widgets = False
 
     if not use_widgets:
         # Fall back to simple markdown display
