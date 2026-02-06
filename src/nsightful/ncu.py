@@ -7,7 +7,6 @@ import re
 from collections import defaultdict
 from typing import Dict, List, Tuple, Any, Iterable, Union
 
-
 # Mapping from raw NCU CSV section names to canonical user-facing names.
 # Order matters: canonical names will appear in output in the order they appear here.
 # All entries for a canonical name must be grouped together.

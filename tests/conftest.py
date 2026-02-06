@@ -177,18 +177,15 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
 
     try:
         # Create StringIds table
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE StringIds (
                 id INTEGER PRIMARY KEY,
                 value TEXT NOT NULL
             )
-        """
-        )
+        """)
 
         # Create CUPTI_ACTIVITY_KIND_KERNEL table
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE CUPTI_ACTIVITY_KIND_KERNEL (
                 start INTEGER NOT NULL,
                 end INTEGER NOT NULL,
@@ -218,12 +215,10 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
                 graphNodeId INTEGER,
                 sharedMemoryLimitConfig INTEGER
             )
-        """
-        )
+        """)
 
         # Create NVTX_EVENTS table
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE NVTX_EVENTS (
                 start INTEGER NOT NULL,
                 end INTEGER,
@@ -245,12 +240,10 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
                 jsonTextId INTEGER,
                 jsonText TEXT
             )
-        """
-        )
+        """)
 
         # Create CUPTI_ACTIVITY_KIND_RUNTIME table
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE CUPTI_ACTIVITY_KIND_RUNTIME (
                 start INTEGER NOT NULL,
                 end INTEGER NOT NULL,
@@ -261,8 +254,7 @@ def sample_nsys_sqlite_db() -> Generator[Path, None, None]:
                 returnValue INTEGER NOT NULL,
                 callchainId INTEGER
             )
-        """
-        )
+        """)
 
         # Insert sample string data
         strings = [
