@@ -63,7 +63,12 @@ def is_interactive_notebook() -> bool:
         # Additional heuristic: check if we're being executed programmatically
         # by looking at the parent header. In nbclient, cells are executed via
         # execute_request but there's no real frontend to handle widget updates.
-        parent_header = getattr(ip.kernel, "_parent_header", {})
+        if hasattr(ip.kernel, "get_parent"):
+            parent_header = ip.kernel.get_parent() or {}
+        else:
+            # Fallback for older ipykernel versions
+            parent_header = getattr(ip.kernel, "_parent_header", {})
+
         if parent_header:
             # We have a parent header, which means we're executing in a kernel
             # But we can't easily tell if it's interactive or nbclient
