@@ -179,9 +179,7 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
         pass
 
     # Ensure text in the widget respects dark/light mode.
-    display(
-        HTML(
-            """
+    display(HTML("""
     <style>
     /* Use JupyterLab theme variables when available */
     .widget-tab .p-TabBar .p-TabBar-tabLabel {
@@ -220,9 +218,7 @@ def display_ncu_csv_in_notebook(ncu_csv: Iterable[str]) -> None:
       padding: 0 0 !important;
     }
     </style>
-    """
-        )
-    )
+    """))
 
     # Get list of kernel names
     kernel_names = list(ncu_dict.keys())
