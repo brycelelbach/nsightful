@@ -418,15 +418,13 @@ class TestFullParsing:
         strings = {1: "test_kernel", 2: "nvtx_range", 3: "cudaMalloc"}
 
         # Mock all the individual parsing functions
-        with patch("nsightful.nsys.parse_nsys_sqlite_cupti_kernel_events") as mock_kernel, patch(
-            "nsightful.nsys.parse_nsys_sqlite_nvtx_events"
-        ) as mock_nvtx, patch(
-            "nsightful.nsys.parse_nsys_sqlite_cuda_api_events"
-        ) as mock_api, patch(
-            "nsightful.nsys.link_nsys_pid_with_devices"
-        ) as mock_link, patch(
-            "nsightful.nsys.link_nvtx_events_to_kernel_events"
-        ) as mock_link_events:
+        with (
+            patch("nsightful.nsys.parse_nsys_sqlite_cupti_kernel_events") as mock_kernel,
+            patch("nsightful.nsys.parse_nsys_sqlite_nvtx_events") as mock_nvtx,
+            patch("nsightful.nsys.parse_nsys_sqlite_cuda_api_events") as mock_api,
+            patch("nsightful.nsys.link_nsys_pid_with_devices") as mock_link,
+            patch("nsightful.nsys.link_nvtx_events_to_kernel_events") as mock_link_events,
+        ):
 
             # Set up return values
             mock_kernel.return_value = ({0: []}, {0: [{"name": "kernel_event"}]})

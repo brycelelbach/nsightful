@@ -273,7 +273,7 @@ The Nsight JupyterLab extension allows you to do two things:
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.10+
 - For Jupyter notebook features: `ipywidgets>=7.0.0`, `IPython>=7.0.0`
 
 ## Development
