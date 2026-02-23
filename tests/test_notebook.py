@@ -788,3 +788,113 @@ class TestDisplayNsysDataInNotebook:
 
         with pytest.raises(Exception):
             display_nsys_sqlite_file_in_notebook(str(invalid_file))
+
+
+class TestNbclientExecution:
+    """Test notebook functions when executed via nbclient (non-interactive)."""
+
+    def test_nbclient_execution(self):
+        """Execute a notebook via nbclient that tests is_interactive_notebook,
+        display_ncu_csv_in_notebook, and display_nsys_sqlite_file_in_notebook."""
+        import nbformat
+        from nbclient import NotebookClient
+
+        # Get absolute paths to test data files
+        tests_dir = Path(__file__).resolve().parent
+        csv_file = tests_dir / "copy_blocked.csv"
+        sqlite_file = tests_dir / "power_iteration__baseline.sqlite"
+
+        if not csv_file.exists():
+            pytest.skip(f"Test CSV file {csv_file} not found")
+        if not sqlite_file.exists():
+            pytest.skip(f"Test SQLite file {sqlite_file} not found")
+
+        nb = nbformat.v4.new_notebook()
+
+        # Cell 0: Test that is_interactive_notebook returns False under nbclient
+        nb.cells.append(
+            nbformat.v4.new_code_cell(
+                "from nsightful.notebook import is_interactive_notebook\n"
+                "result = is_interactive_notebook()\n"
+                "assert result is False, (\n"
+                "    f'Expected is_interactive_notebook() to be False under nbclient, got {result}'\n"
+                ")\n"
+                "print('is_interactive_notebook returned', result)"
+            )
+        )
+
+        # Cell 1: Test display_ncu_csv_in_notebook with the test CSV file.
+        # With NSIGHTFUL_USE_WIDGETS=0, this exercises the simple-markdown fallback path.
+        nb.cells.append(
+            nbformat.v4.new_code_cell(
+                "from nsightful.notebook import display_ncu_csv_in_notebook\n"
+                f"with open({str(csv_file)!r}, 'r') as f:\n"
+                "    display_ncu_csv_in_notebook(f)\n"
+                "print('display_ncu_csv_in_notebook completed successfully')"
+            )
+        )
+
+        # Cell 2: Test display_nsys_sqlite_file_in_notebook with the test SQLite file.
+        nb.cells.append(
+            nbformat.v4.new_code_cell(
+                "from nsightful.notebook import display_nsys_sqlite_file_in_notebook\n"
+                f"display_nsys_sqlite_file_in_notebook({str(sqlite_file)!r})\n"
+                "print('display_nsys_sqlite_file_in_notebook completed successfully')"
+            )
+        )
+
+        client = NotebookClient(nb, timeout=120, kernel_name="python3")
+        client.execute()
+
+        # --- Cell 0: is_interactive_notebook ---
+        cell0_outputs = nb.cells[0].outputs
+        cell0_text = _collect_cell_text(cell0_outputs)
+        assert "False" in cell0_text, (
+            f"Expected 'False' in is_interactive_notebook cell output, got: {cell0_text}"
+        )
+
+        # --- Cell 1: display_ncu_csv_in_notebook ---
+        # In non-interactive mode, falls back to display_ncu_simple_markdown
+        # which calls display(Markdown(...)), producing display_data outputs.
+        cell1_outputs = nb.cells[1].outputs
+        cell1_text = _collect_cell_text(cell1_outputs)
+        assert "display_ncu_csv_in_notebook completed successfully" in cell1_text
+        # There should be display_data outputs (Markdown rendered content)
+        display_data_outputs = [o for o in cell1_outputs if o.output_type == "display_data"]
+        assert len(display_data_outputs) > 0, (
+            "Expected display_data outputs from display_ncu_csv_in_notebook"
+        )
+
+        # --- Cell 2: display_nsys_sqlite_file_in_notebook ---
+        # Produces an HTML display with Perfetto integration.
+        cell2_outputs = nb.cells[2].outputs
+        cell2_text = _collect_cell_text(cell2_outputs)
+        assert "display_nsys_sqlite_file_in_notebook completed successfully" in cell2_text
+        # Should contain display_data output with HTML content
+        display_data_outputs = [o for o in cell2_outputs if o.output_type == "display_data"]
+        assert len(display_data_outputs) > 0, (
+            "Expected display_data outputs from display_nsys_sqlite_file_in_notebook"
+        )
+        # Verify the HTML contains the Perfetto button
+        html_contents = []
+        for o in display_data_outputs:
+            html_contents.append(o.get("data", {}).get("text/html", ""))
+        all_html = "\n".join(html_contents)
+        assert "perfetto" in all_html.lower(), (
+            f"Expected Perfetto-related HTML in nsys output, got: {all_html[:200]}"
+        )
+
+
+def _collect_cell_text(outputs):
+    """Collect all text content from cell outputs (stream + display_data)."""
+    parts = []
+    for output in outputs:
+        if output.output_type == "stream":
+            parts.append(output.text)
+        elif output.output_type == "display_data":
+            parts.append(output.get("data", {}).get("text/plain", ""))
+            parts.append(output.get("data", {}).get("text/markdown", ""))
+            parts.append(output.get("data", {}).get("text/html", ""))
+        elif output.output_type == "execute_result":
+            parts.append(output.get("data", {}).get("text/plain", ""))
+    return "\n".join(parts)

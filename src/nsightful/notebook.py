@@ -38,10 +38,9 @@ def is_interactive_notebook() -> bool:
         if ip is None:
             return False
 
-        # Check if ipywidgets is available, and make sure it's imported before we check for a
-        # comm manager
+        # Check if ipywidgets is available
         try:
-            import ipywidgets as widgets
+            import ipywidgets as widgets  # noqa: F401
         except ImportError:
             return False
 
@@ -49,40 +48,14 @@ def is_interactive_notebook() -> bool:
         if not hasattr(ip, "kernel"):
             return False
 
-        # Check if there's a comm manager with widget support
-        # In nbclient, the comm infrastructure exists but widgets don't render properly
-        # and clear_output(wait=True) can hang waiting for frontend acknowledgment
-        if hasattr(ip.kernel, "comm_manager"):
-            comm_manager = ip.kernel.comm_manager
-            # Check if jupyter.widget target is registered (indicates widget support)
-            targets = getattr(comm_manager, "targets", {})
-            if not any("jupyter.widget" in str(t) for t in targets):
-                # No widget comm target - likely nbclient or similar
-                return False
-
-        # Additional heuristic: check if we're being executed programmatically
-        # by looking at the parent header. In nbclient, cells are executed via
-        # execute_request but there's no real frontend to handle widget updates.
-        if hasattr(ip.kernel, "get_parent"):
-            parent_header = ip.kernel.get_parent() or {}
-        else:
-            # Fallback for older ipykernel versions
-            parent_header = getattr(ip.kernel, "_parent_header", {})
-
-        if parent_header:
-            # We have a parent header, which means we're executing in a kernel
-            # But we can't easily tell if it's interactive or nbclient
-            # Fall back to checking if stdin is available (not in nbclient)
-            try:
-                import sys
-
-                # In nbclient, stdin is typically not interactive
-                if hasattr(sys.stdin, "isatty") and not sys.stdin.isatty():
-                    # Not a TTY, but this could also be a remote Jupyter session
-                    # So we need another check
-                    pass
-            except Exception:
-                pass
+        # Check if stdin is allowed for this execution context. In nbclient and
+        # other non-interactive execution environments, the kernel's _allow_stdin
+        # is False because there is no frontend to handle interactive input or
+        # widget updates. In a live Jupyter session (Notebook, Lab, VS Code, Colab),
+        # the frontend sets allow_stdin=True in its execute requests.
+        allow_stdin = getattr(ip.kernel, "_allow_stdin", None)
+        if allow_stdin is False:
+            return False
 
         return True
 
